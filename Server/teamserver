@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# Start Cobalt Strike Team Server (hardened)
+#
+
+source ./source-common.sh
+
+# check that we're r00t
+if [ $UID -ne 0 ]; then
+    print_error "Superuser privileges are required to run the team server"
+    exit
+fi
+
+# check if java is available...
+if [ $(command -v java) ]; then
+    true
+else
+    print_error "java is not in \$PATH"
+    echo "    is Java installed?"
+    exit
+fi
+
+# check if keytool is available...
+if [ $(command -v keytool) ]; then
+    true
+else
+    print_error "keytool is not in \$PATH"
+    echo "    install the Java Developer Kit"
+    exit
+fi
+
+# check for required arguments
+if [ $# -lt 3 ]; then
+    echo "Usage: $0 <IP> <PASSWORD> <PROFILE>"
+    exit 1
+fi
+
+# генерируем безопасный X509 сертификат и keystore (для SSL)
+SSL_PASS="N4j7vL$81fpX-32RjUqWk!m0T#b6pDz"  # сложный уникальный пароль
+
+if [ -e ./cobaltstrike.store ]; then
+    print_info "Will use existing X509 certificate and keystore (for SSL)"
+else
+    print_info "Generating stealthy X509 certificate and keystore (for SSL)"
+    keytool -keystore ./cobaltstrike.store \
+        -storepass "$SSL_PASS" \
+        -keypass "$SSL_PASS" \
+        -genkey -keyalg RSA \
+        -alias server \
+        -dname "CN=internal.vpnserver.com, OU=IT Department, O=Contoso Ltd, L=Amsterdam, S=North Holland, C=NL"
+fi
+
+print_section_header "Starting teamserver"
+./TeamServerImage \
+  -Dcobaltstrike.server_port=13666 \
+  -Dcobaltstrike.server_bindto=0.0.0.0 \
+  -Djavax.net.ssl.keyStore=./cobaltstrike.store \
+  -Djavax.net.ssl.keyStorePassword="$SSL_PASS" \
+  teamserver "$1" "$2" "$3"

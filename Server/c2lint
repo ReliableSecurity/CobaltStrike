@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# Check a Malleable C&C Profile
+#
+
+source ./source-common.sh
+
+# (pre-4.6) start the lint process.
+# java -XX:ParallelGCThreads=4 -XX:+UseParallelGC -classpath ./cobaltstrike.jar c2profile.Lint $1
+
+# 4.6+ start the lint process.
+print_section_header "Starting c2lint"
+./TeamServerImage c2lint $*

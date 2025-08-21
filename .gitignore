@@ -1,0 +1,72 @@
+# AKUMA's CobaltStrike .gitignore
+# Исключаем временные и логовые файлы
+
+# Backup файлы от наших скриптов
+*.backup.*
+
+# Temporary path marker
+.current_path
+
+# Logs
+*.log
+logs/
+Server/logs/
+Server/data/
+
+# Downloads folder (может содержать чувствительные данные)
+downloads/
+Server/downloads/
+
+# Beacon keys (чувствительная информация)
+.cobaltstrike.beacon_keys
+*.beacon_keys
+
+# Cobalt Strike Auth файлы
+cobaltstrike.auth
+*.auth
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled files
+*.class
+*.jar.bak
+
+# System files
+.directory
+
+# Exclude sensitive operational data
+*.keystore
+*.jks
+privkey.pem
+cert.pem
+
+# Exclude C2 session data that might contain sensitive info
+*.sessions
+*.profiles.bak
+
+# Exclude potential payload artifacts
+*.exe
+*.dll
+*.so
+payload_*
+
+# But keep the main executables we need
+!genCrossC2.Linux
+!genCrossC2.MacOS
+!TeamServerImage
+!cobaltstrike-client.jar
+
+# Exclude nested git repositories (use as separate repos if needed)
+BOF/C2-Tool-Collection/
+Malleable-C2-Profiles/
