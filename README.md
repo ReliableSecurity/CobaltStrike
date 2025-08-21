@@ -117,25 +117,39 @@ This tool is intended **exclusively** for:
 
 ---
 
-## 📸 Screenshots
+## 📸 Visual Confirmation
 
 ### ✅ Successful Deployment
-![Successful Connection](screenshots/01_successful_connection.png)
-*Successful TeamServer connection with active beacon*
+📷 **[01_successful_connection.png](screenshots/01_successful_connection.png)**
+- Successful TeamServer connection with active beacon
+- Shows connected client (akuma@IP)
+- Active beacon visible in interface
+- TeamServer running on specified IP
 
-### ✅ CrossC2 Scripts Loaded
-![CrossC2 Loaded](screenshots/02_crossc2_loaded.png)
-*CrossC2 scripts successfully loaded and initialized*
+### ✅ CrossC2 Scripts Loaded  
+📷 **[02_crossc2_loaded.png](screenshots/02_crossc2_loaded.png)**
+- CrossC2 scripts successfully loaded and initialized
+- Event Log showing successful script loading
+- Messages: `*** akuma has joined.`, `*** genCrossC2 beacon => [Success]`
+- Confirmation of path configuration
 
 ### ✅ CrossC2 Listener Creation
-![CrossC2 Listener](screenshots/03_crossc2_listener.png)
-*Creating CrossC2 listener for Linux/macOS beacons*
+📷 **[03_crossc2_listener.png](screenshots/03_crossc2_listener.png)**
+- Interface for creating CrossC2 listener for Linux/macOS beacons
+- Configuration options: host, port, arch, upx settings
+- Profile selection and SSL options
+- Ready to generate cross-platform payloads
 
 ### ✅ CrossC2 Menu Available
-![CrossC2 Menu](screenshots/04_crossc2_menu.png)
-*CrossC2 menu available in interface - confirming successful setup*
+📷 **[04_crossc2_menu.png](screenshots/04_crossc2_menu.png)**
+- CrossC2 menu available in main interface
+- Generator submenu accessible
+- Confirmation of successful setup and integration
+- All CrossC2 functionality ready to use
 
-> 📁 **Screenshots location:** `screenshots/` - See [screenshots/README.md](screenshots/README.md) for details
+> 📁 **Screenshots:** Located in [`screenshots/`](screenshots/) directory - See [screenshots/README.md](screenshots/README.md) for details
+> 
+> 💡 **Note:** Screenshots demonstrate successful deployment and confirm all components are working correctly
 
 ---
 
