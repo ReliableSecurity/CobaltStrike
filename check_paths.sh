@@ -73,11 +73,39 @@ else
     echo "📍 Маркер пути не найден (первый запуск?)"
 fi
 
+# Проверяем CNA скрипты и C2 IP
+if [[ -d "$SCRIPT_DIR/cna-scripts" ]]; then
+    echo "🌐 Проверяем C2 IP в CNA скриптах:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    
+    for cna_file in "$SCRIPT_DIR/cna-scripts/"*.cna; do
+        if [[ -f "$cna_file" ]]; then
+            filename=$(basename "$cna_file")
+            
+            # Ищем строчку с c2_server
+            c2_server_line=$(grep -E '%[a-z_]*config\["c2_server"\]' "$cna_file" | head -1)
+            
+            if [[ -n "$c2_server_line" ]]; then
+                # Извлекаем IP адрес
+                current_ip=$(echo "$c2_server_line" | sed 's/.*"\([^"]*\)".*/\1/')
+                echo "📝 $filename: C2 IP = $current_ip"
+            else
+                echo "⚠️  $filename: C2 IP не найден"
+            fi
+        fi
+    done
+else
+    echo "📝 CNA скрипты не найдены"
+fi
+
 echo ""
 echo "🎯 Рекомендации:"
 if [[ ! -f "$PATH_MARKER" ]] || [[ "$(cat "$PATH_MARKER" 2>/dev/null)" != "$SCRIPT_DIR" ]]; then
     echo "   🔧 Запусти: ./setup_portable.sh"
 fi
 echo "   📱 Для обновления: ./fix_paths.sh"
+if [[ -d "$SCRIPT_DIR/cna-scripts" ]]; then
+    echo "   🌐 C2 IP автоматически обновляется при запуске setup_portable.sh"
+fi
 echo ""
 echo "🤘 Как говорил мой дед: 'Лучше проверить дважды, чем дебажить всю ночь!'"
