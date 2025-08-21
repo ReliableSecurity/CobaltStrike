@@ -117,6 +117,28 @@ This tool is intended **exclusively** for:
 
 ---
 
+## 📸 Screenshots
+
+### ✅ Successful Deployment
+![Successful Connection](screenshots/01_successful_connection.png)
+*Successful TeamServer connection with active beacon*
+
+### ✅ CrossC2 Scripts Loaded
+![CrossC2 Loaded](screenshots/02_crossc2_loaded.png)
+*CrossC2 scripts successfully loaded and initialized*
+
+### ✅ CrossC2 Listener Creation
+![CrossC2 Listener](screenshots/03_crossc2_listener.png)
+*Creating CrossC2 listener for Linux/macOS beacons*
+
+### ✅ CrossC2 Menu Available
+![CrossC2 Menu](screenshots/04_crossc2_menu.png)
+*CrossC2 menu available in interface - confirming successful setup*
+
+> 📁 **Screenshots location:** `screenshots/` - See [screenshots/README.md](screenshots/README.md) for details
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Quick Fixes

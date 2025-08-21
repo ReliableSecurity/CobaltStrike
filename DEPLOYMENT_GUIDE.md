@@ -78,11 +78,32 @@ Script Manager → Load → ../CrossC2Kit-GithubBot-2023-11-20/CrossC2Kit/CrossC
 ### ✅ CrossC2 Menu
 - В главном меню должен появиться пункт **"CrossC2"**
 - Подменю **"generator"** должно быть доступно
+- Возможность создавать CrossC2 listener'ы
 
 ### ✅ CrossC2Kit Features  
 - Дополнительные возможности в контекстных меню
 - Расширенные beacon команды
 - Кастомные функции для post-exploitation
+
+### ✅ Event Log Confirmation
+В Event Log должны появиться сообщения:
+```
+*** akuma has joined.
+*** /home/akuma/Documents/CobaltStrike/genCrossC2.Linux 192.168.1.17 44323
+*** /home/akuma/Music/AKUMA_CobaltStrike/Server/.cobaltstrike.beacon_keys
+*** genCrossC2 beacon => [Success] *** Forked 505976 byte.
+*** Linux x64 C main libprint a https://192.168.1.17:44323/SJYMbzIHVa 
+*** rebind protocol => null
+*** akuma hosted CrossC2 beacon: reverse-https Linux x64 ( main )https/1 a https://192.168.1.17:44323/SJYMbzIHVa
+*** create listener: CrossC2 beacon: reverse-https Linux x64 ( main )
+```
+
+### 📸 Visual Confirmation
+Смотри скриншоты в папке `screenshots/` для подтверждения правильной настройки:
+- `01_successful_connection.png` - Успешное подключение
+- `02_crossc2_loaded.png` - Загруженные скрипты
+- `03_crossc2_listener.png` - Создание listener'а
+- `04_crossc2_menu.png` - Доступное меню CrossC2
 
 ## 🎪 Структура проекта
 
