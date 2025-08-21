@@ -1,0 +1,22 @@
+# Simple test popup menu
+
+popup beacon_bottom {
+    item "TEST: Hello AKUMA" {
+        blog($1, "Hello from AKUMA test menu!");
+        bshell($1, "echo 'AKUMA test command executed successfully'");
+        bshell($1, "whoami && hostname");
+    }
+    separator();
+    menu "TEST: AKUMA Submenu" {
+        item "Test Option 1" {
+            blog($1, "AKUMA Test Option 1 executed!");
+            bshell($1, "echo 'Test option 1 working'");
+        }
+        item "Test Option 2" {
+            blog($1, "AKUMA Test Option 2 executed!");
+            bshell($1, "echo 'Test option 2 working'");
+        }
+    }
+}
+
+blog("TEST: Simple popup menu loaded! Right-click on beacon to test.");

