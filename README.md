@@ -120,34 +120,50 @@ This tool is intended **exclusively** for:
 ## 📸 Visual Confirmation
 
 ### ✅ Successful Deployment
-📷 **[01_successful_connection.png](screenshots/01_successful_connection.png)**
+![Successful TeamServer Connection](screenshots/01_successful_connection.png)
+
+**01_successful_connection.png**
 - Successful TeamServer connection with active beacon
 - Shows connected client (akuma@IP)
 - Active beacon visible in interface
 - TeamServer running on specified IP
 
+---
+
 ### ✅ CrossC2 Scripts Loaded  
-📷 **[02_crossc2_loaded.png](screenshots/02_crossc2_loaded.png)**
+![CrossC2 Scripts Loaded](screenshots/02_crossc2_loaded.png)
+
+**02_crossc2_loaded.png**
 - CrossC2 scripts successfully loaded and initialized
 - Event Log showing successful script loading
 - Messages: `*** akuma has joined.`, `*** genCrossC2 beacon => [Success]`
 - Confirmation of path configuration
 
+---
+
 ### ✅ CrossC2 Listener Creation
-📷 **[03_crossc2_listener.png](screenshots/03_crossc2_listener.png)**
+![CrossC2 Listener Interface](screenshots/03_crossc2_listener.png)
+
+**03_crossc2_listener.png**
 - Interface for creating CrossC2 listener for Linux/macOS beacons
 - Configuration options: host, port, arch, upx settings
 - Profile selection and SSL options
 - Ready to generate cross-platform payloads
 
+---
+
 ### ✅ CrossC2 Menu Available
-📷 **[04_crossc2_menu.png](screenshots/04_crossc2_menu.png)**
+![CrossC2 Menu](screenshots/04_crossc2_menu.png)
+
+**04_crossc2_menu.png**
 - CrossC2 menu available in main interface
 - Generator submenu accessible
 - Confirmation of successful setup and integration
 - All CrossC2 functionality ready to use
 
 > 📁 **Screenshots:** Located in [`screenshots/`](screenshots/) directory - See [screenshots/README.md](screenshots/README.md) for details
+> 
+> 🎆 **Visual Version:** For better image display, see [README_VISUAL.md](README_VISUAL.md) with full-size screenshots
 > 
 > 💡 **Note:** Screenshots demonstrate successful deployment and confirm all components are working correctly
 
