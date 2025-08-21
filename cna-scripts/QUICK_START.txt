@@ -1,0 +1,84 @@
+🔥 AKUMA v4.0 - CrossC2 Quick Start Guide
+
+═══════════════════════════════════════════════════════
+
+📁 ESSENTIAL FILES FOR CROSSC2:
+
+READY_TO_LOAD/
+├── akuma_crossc2_menu.cna      ← MAIN script with popup menu
+└── test_crossc2_popup.cna      ← Test script for diagnostics
+
+═══════════════════════════════════════════════════════
+
+🚀 LOADING STEPS:
+
+1. Start Cobalt Strike with CrossC2Kit loaded
+2. Get an active SSH beacon through CrossC2  
+3. In Script Manager, load: test_crossc2_popup.cna
+4. Right-click on SSH beacon → Should see "TEST: CrossC2 Menu"
+5. If test menu works:
+   - Unload test script
+   - Load: akuma_crossc2_menu.cna
+   - Right-click SSH beacon → See "AKUMA Linux PostEx" menu
+
+═══════════════════════════════════════════════════════
+
+🎯 KEY FEATURES:
+
+• Quick Foothold (2min)    - Fast deployment
+• Full Deployment (5min)   - Complete setup
+• System Enumeration       - Host reconnaissance  
+• Network Discovery        - Network mapping
+• Cron Persistence         - Backdoor installation
+• SSH Key Backdoor         - SSH access setup
+• Credential Harvest       - Password collection
+• File Hunt               - Sensitive data search
+• Cleanup & Stealth       - Evidence removal
+
+═══════════════════════════════════════════════════════
+
+💻 DIRECT COMMANDS (in SSH beacon):
+
+akuma_quick     # Quick foothold
+akuma_full      # Full deployment
+akuma_enum      # System enumeration
+akuma_persist   # Install persistence
+akuma_creds     # Harvest credentials
+
+═══════════════════════════════════════════════════════
+
+⚙️ CONFIGURATION:
+
+Edit akuma_crossc2_menu.cna line 5-10:
+- c2_server: Your C2 server IP
+- backup_ports: Reverse shell ports
+- ssh_key: Your SSH public key
+
+═══════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING:
+
+❌ Menu not appearing?
+  → Check SSH beacon (not HTTP/HTTPS)
+  → Beacon must be online (green)
+  → Reload Script Manager
+  → Check Event Log for errors
+
+❌ Commands failing?
+  → Verify beacon is active
+  → Check target system permissions
+  → Network connectivity issues
+
+❌ CrossC2Kit conflicts?
+  → Load AKUMA after CrossC2Kit
+  → Temporary disable other CNA scripts
+  → Use separate CS profile if needed
+
+═══════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+Full docs: CROSSC2_README.md
+Repository: https://github.com/sweetpotatohack/AKUMA_CobaltStrike
+
+Version: 4.0 | CrossC2 Compatible | August 2024
