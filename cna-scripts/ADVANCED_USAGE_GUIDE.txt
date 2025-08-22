@@ -1,0 +1,155 @@
+🔥 AKUMA Advanced CrossC2 - Complete Post-Exploitation Automation
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+✅ TESTED & WORKING SCRIPTS:
+
+READY_TO_LOAD/
+├── akuma_simple_crossc2.cna        ← WORKING ✅ (Basic functions)
+└── akuma_advanced_crossc2.cna      ← NEW! Advanced automation playbook
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+🎯 WHAT'S NEW IN ADVANCED VERSION:
+
+📋 STRUCTURED PHASES:
+Phase 1: Stabilization & Emergency Backdoors
+Phase 2: Comprehensive Reconnaissance (System, Network, Processes)
+Phase 3: Credential Hunting (Passwords, SSH Keys, DB Configs)
+Phase 4: Privilege Escalation Recon (SUID, Sudo, Kernel)
+Phase 5: Advanced Persistence (Cron, Profiles, Services)
+
+🤖 AUTOMATION PLAYBOOKS:
+• Quick Playbook (10min) - Essential actions for fast ops
+• Full Playbook (30min) - Complete post-exploitation automation
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+📁 LOADING INSTRUCTIONS:
+
+1. Load: /home/akuma/Documents/CobaltStrike/cna-scripts/READY_TO_LOAD/akuma_advanced_crossc2.cna
+2. Right-click on SSH beacon → "AKUMA Advanced" menu appears
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+⚙️ CONFIGURATION (Edit script lines 4-8):
+
+%akuma_config = %(
+    c2_server => "192.168.1.17",                        ← Your C2 server IP
+    backup_ports => @(4444, 5555, 6666, 7777, 8888),    ← Reverse shell ports  
+    ssh_key => "ssh-rsa AAAAB3NzaC1yc2E..."             ← Your SSH public key
+);
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+🎮 USAGE SCENARIOS:
+
+🔥 SCENARIO 1: Quick Compromise (Time sensitive)
+→ "Quick Playbook (10min)" - Automated essential actions
+→ Manual: Phase 1 (Stabilize + Backdoors) → Phase 2 (System) → Phase 3 (Passwords)
+
+⚡ SCENARIO 2: Deep Reconnaissance (Full assessment)
+→ "Full Playbook (30min)" - Complete automated post-exploitation
+→ Manual: Run all phases 1-5 sequentially for custom control
+
+🎯 SCENARIO 3: Targeted Hunt (Specific objectives)
+→ Phase 1 (Stabilize) → Phase 3 (Credentials) → Phase 4 (PrivEsc)
+→ Use individual phase functions based on engagement requirements
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+📊 PHASE BREAKDOWN:
+
+🔧 PHASE 1: STABILIZATION (2-3 minutes)
+• Quick Stabilize: Basic system check + environment setup
+• Emergency Backdoors: SSH keys + multiple cron backdoors + profile hooks
+
+🔍 PHASE 2: RECONNAISSANCE (5-8 minutes)  
+• System Enumeration: OS, hardware, users, environment
+• Network Discovery: Interfaces, routing, connections, port scan
+• Process Analysis: Running processes, services, process tree
+
+🔐 PHASE 3: CREDENTIAL HUNTING (5-8 minutes)
+• Password Hunt: Command history, env vars, config files
+• SSH Keys Search: Private keys, authorized_keys, certificates
+• Database Configs: MySQL, PostgreSQL, MongoDB, SQLite
+
+🚀 PHASE 4: PRIVILEGE ESCALATION (5-8 minutes)
+• SUID/Capabilities: SUID binaries, capabilities, writable files
+• Sudo & Cron Check: Sudo config, cron jobs, writable cron files
+• Kernel & Software: Kernel version, software versions, exploit potential
+
+⏰ PHASE 5: ADVANCED PERSISTENCE (3-5 minutes)
+• Advanced Cron: Multiple cron backdoors with different timings
+• Profile Backdoors: .bashrc hooks, system-wide profiles
+• Service Persistence: systemd services, startup scripts
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+🎯 AUTOMATED PLAYBOOKS:
+
+⚡ QUICK PLAYBOOK (10 minutes):
+Phase 1 Stabilize → Phase 1 Backdoors → Phase 2 System → Phase 3 Passwords → Phase 4 SUID
+✅ Perfect for: Time-sensitive ops, initial foothold, rapid assessment
+
+🔥 FULL PLAYBOOK (30 minutes):
+All phases 1-4 with comprehensive coverage + sleep delays between phases
+✅ Perfect for: Deep assessment, comprehensive post-exploitation, full automation
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+🛡️ STEALTH FEATURES:
+
+• Automatic history clearing (HISTFILE=/dev/null)
+• Temp file cleanup (/tmp/.akuma*)
+• Log clearing (if root privileges)
+• Process name obfuscation options
+• Non-suspicious file names and locations
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS:
+
+1. 🎯 **Start with Quick Playbook** - Gets essential coverage in 10 minutes
+2. ⏱️ **Monitor timing** - Phases have built-in delays to avoid detection
+3. 🔧 **Customize config** - Update C2 server and SSH key before loading
+4. 📊 **Check output** - Each phase provides detailed enumeration results
+5. 🧹 **Always cleanup** - Use "Cleanup & Exit" before disconnecting
+6. 🔄 **Verify persistence** - Check cron jobs were installed successfully
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+🚨 TROUBLESHOOTING:
+
+❌ Menu not appearing?
+→ Ensure SSH beacon (not HTTP/HTTPS)
+→ Beacon must be online and active
+→ Load akuma_simple_crossc2.cna first to test basic functionality
+
+❌ Commands failing?
+→ Check target system permissions
+→ Verify network connectivity to C2 server
+→ Some commands require specific tools (systemctl, etc.)
+
+❌ Playbook interruption?
+→ Individual phases can be run separately
+→ Check beacon status between phases
+→ Manual execution if automation fails
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+📈 EXPECTED RESULTS:
+
+✅ Phase 1: Multiple persistent backdoors, system stabilization
+✅ Phase 2: Complete system profile, network map, running services
+✅ Phase 3: Credential dump, SSH keys, database connection strings
+✅ Phase 4: Privilege escalation vectors, vulnerable software
+✅ Phase 5: Advanced persistence mechanisms across multiple vectors
+
+Total Intelligence Gathering: 80+ commands executed automatically
+Persistence Mechanisms: 5+ different backdoor methods
+Attack Surface: Complete enumeration of escalation paths
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+Version: v5.0 Advanced | Complete Post-Exploitation Automation | August 2024
