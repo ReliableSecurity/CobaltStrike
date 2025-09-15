@@ -1,4 +1,4 @@
-# 🔥 AKUMA CobaltStrike Portable Setup 🔥
+# 🔥 CobaltStrike Portable Setup 🔥
 
 **Advanced Penetration Testing Framework with CrossC2 Extensions**
 
