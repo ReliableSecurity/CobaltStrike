@@ -206,8 +206,6 @@ cd Client && ./cobaltstrike-client.sh
 
 ## 🤘 Credits
 
-**Created by AKUMA** - When you need to pwn everything that breathes! 😈
-
 *"The best penetration tester is one who breaks in first, then explains how to fix it!"*
 
 **Special thanks to:**
